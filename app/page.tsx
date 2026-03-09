@@ -1,25 +1,21 @@
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import HeroCarousel from '@/components/sections/HeroCarousel';
 import Categories from '@/components/sections/Categories';
 import BooksGrid from '@/components/sections/BooksGrid';
-import About from '@/components/sections/About';
 import PrintingHub from '@/components/sections/PrintingHub';
 import Testimonials from '@/components/sections/Testimonials';
 import Contact from '@/components/sections/Contact';
+import Books from '@/components/sections/Books';
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
-      <Navbar />
+    <main className="min-h-screen bg-gray-50">
       <HeroCarousel />
-      <Categories />
       <BooksGrid />
-      <About />
+      <Categories />
+      <Books />
       <PrintingHub />
       <Testimonials />
       <Contact />
-      <Footer />
     </main>
   );
 }
