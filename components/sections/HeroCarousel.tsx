@@ -81,7 +81,7 @@ export default function HeroCarousel() {
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white leading-tight drop-shadow-md mb-4 whitespace-pre-line transition-all duration-300">
                 {currentSlide.title}
               </h1>
-              <Link href="/shop">
+              <Link href="/categories">
                 <button className="bg-white text-gray-800 text-sm font-bold px-5 py-2.5 rounded-full hover:bg-brand-500 hover:text-white transition-all shadow-sm w-fit active:scale-[0.98]">
                   {currentSlide.cta}
                 </button>
@@ -102,7 +102,7 @@ export default function HeroCarousel() {
 
           {/* Side panel - stacks below on mobile/tablet, right side on desktop */}
           <div className="flex flex-col sm:flex-row lg:flex-col lg:w-56 gap-3">
-            <Link href="/shop" className="rounded-xl bg-white shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition cursor-pointer border border-gray-100 block">
+            <Link href="/categories" className="rounded-xl bg-white shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition cursor-pointer border border-gray-100 block">
               <div className="w-14 aspect-[2/3] bg-red-100 rounded flex-shrink-0 overflow-hidden">
                 <img
                   src="/images/books/book1.jpg"
@@ -130,7 +130,7 @@ export default function HeroCarousel() {
                   </div>
                 ))}
               </div>
-              <Link href="/shop" className="block">
+              <Link href="/categories" className="block">
                 <button className="w-full text-xs bg-brand-500 text-white font-bold py-2 rounded-lg hover:bg-brand-600 transition shadow-sm">
                   Shop Now
                 </button>

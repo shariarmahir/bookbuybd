@@ -315,7 +315,7 @@ export default function BookDetails() {
                                 <div className="info-card">
                                     <div className="flex items-center justify-between mb-3">
                                         <p className="sec-title" style={{ marginBottom: 0 }}>Other Books</p>
-                                        <button className="read-more" style={{ fontSize: 11 }}>View All</button>
+                                        <Link href="/categories" className="read-more" style={{ fontSize: 11 }}>View All</Link>
                                     </div>
                                     <div className="flex gap-2 flex-wrap">
                                         {OTHER_BOOKS.map((b, i) => (

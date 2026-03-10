@@ -417,8 +417,8 @@ function GenrePreviewSection({
         </div>
 
         {/* ── Fixed "View More" button always visible ── */}
-        <button
-          onClick={() => onViewMore(genre)}
+        <Link
+          href="/categories"
           className="flex items-center gap-1.5 text-white font-bold text-xs px-4 py-2 rounded-full shadow-md transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
           style={{ background: meta.color, boxShadow: `0 4px 12px ${meta.color}55` }}
         >
@@ -426,7 +426,7 @@ function GenrePreviewSection({
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
           </svg>
-        </button>
+        </Link>
       </div>
 
       {/* Preview cards row */}
@@ -532,8 +532,8 @@ export default function Books() {
                         </p>
                       </div>
                       {/* ── Fixed View More button always visible ── */}
-                      <button
-                        onClick={() => goToDetail(activeGenre)}
+                      <Link
+                        href="/categories"
                         className="flex items-center gap-1.5 text-white font-bold text-xs px-5 py-2.5 rounded-full shadow-md transition-all duration-200 hover:opacity-90 active:scale-[0.97] flex-shrink-0"
                         style={{
                           background: GENRE_META[activeGenre]?.color,
@@ -544,7 +544,7 @@ export default function Books() {
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                         </svg>
-                      </button>
+                      </Link>
                     </div>
 
                     {shownAll.length === 0 ? (
