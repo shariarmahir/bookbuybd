@@ -329,29 +329,27 @@ export default function Testimonials() {
 
         {/* ══ SECTION 1: Benefits ══ */}
         <section className="max-w-5xl mx-auto px-6 py-14">
-          <div className="flex items-center gap-10">
-            <div className="flex-shrink-0">
+          <div className="flex flex-col items-center text-center">
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-8 tracking-tight">
+              Benifits Of Reading Book
+            </h2>
+            <div className="mb-8">
               <BookStack />
             </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-extrabold text-gray-900 mb-6 tracking-tight">
-                Benifits Of Reading Book
-              </h2>
-              <ul className="space-y-4">
-                {BENEFITS.map((b, i) => (
-                  <li
-                    key={i}
-                    className="benefit-item flex items-center gap-3"
-                    style={{ animationDelay: `${i * 0.1}s` }}
-                  >
-                    <span className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 flex-shrink-0 transition-transform hover:scale-110 hover:bg-teal-50 hover:text-teal-600 duration-200">
-                      {b.icon}
-                    </span>
-                    <span className="text-sm font-semibold text-gray-700">{b.label}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="grid grid-cols-2 gap-x-10 gap-y-5">
+              {BENEFITS.map((b, i) => (
+                <li
+                  key={i}
+                  className="benefit-item flex items-center gap-3"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <span className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 flex-shrink-0 transition-transform hover:scale-110 hover:bg-teal-50 hover:text-teal-600 duration-200">
+                    {b.icon}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-700">{b.label}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

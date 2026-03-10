@@ -1,31 +1,12 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { CartItem, INITIAL_CART, DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from './cartStore';
 
-/* ── fallback image ── */
+/* ── Fallback image ── */
 function Img({ src, alt = '', className = '', fallback = '#e2e8f0' }: { src: string; alt?: string; className?: string; fallback?: string }) {
   const [err, setErr] = useState(false);
   if (err) return <div className={className} style={{ background: fallback }} />;
   return <img src={src} alt={alt} className={className} onError={() => setErr(true)} />;
-}
-
-/* ── qty stepper ── */
-function QtyBtn({ onClick, children, disabled }: { onClick: () => void; children: React.ReactNode; disabled?: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition-all"
-      style={{
-        background: disabled ? '#f1f5f9' : '#eff6ff',
-        color: disabled ? '#cbd5e1' : '#1E3A8A',
-        border: '1px solid',
-        borderColor: disabled ? '#e2e8f0' : '#bfdbfe',
-      }}
-    >
-      {children}
-    </button>
-  );
 }
 
 interface CartProps {
@@ -40,153 +21,149 @@ export default function Cart({ onCheckout }: CartProps) {
   const [couponError, setCouponError] = useState('');
 
   const updateQty = (id: number, delta: number) => {
-    setItems(prev => prev.map(it =>
-      it.id === id ? { ...it, qty: Math.max(1, it.qty + delta) } : it
-    ));
+    setItems(prev => prev.map(it => it.id === id ? { ...it, qty: Math.max(1, it.qty + delta) } : it));
   };
 
   const removeItem = (id: number) => {
     setRemoving(id);
-    setTimeout(() => {
-      setItems(prev => prev.filter(it => it.id !== id));
-      setRemoving(null);
-    }, 350);
+    setTimeout(() => { setItems(prev => prev.filter(it => it.id !== id)); setRemoving(null); }, 400);
   };
 
-  const subtotal  = items.reduce((s, it) => s + it.price * it.qty, 0);
-  const discount  = couponApplied ? Math.round(subtotal * 0.1) : 0;
-  const delivery  = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
-  const total     = subtotal - discount + delivery;
-  const savings   = items.reduce((s, it) => s + ((it.originalPrice ?? it.price) - it.price) * it.qty, 0);
+  const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0);
+  const discount = couponApplied ? Math.round(subtotal * 0.1) : 0;
+  const delivery = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
+  const total = subtotal - discount + delivery;
+  const savings = items.reduce((s, it) => s + ((it.originalPrice ?? it.price) - it.price) * it.qty, 0);
+  const totalQty = items.reduce((s, it) => s + it.qty, 0);
+  const freeProgress = Math.min(100, (subtotal / FREE_DELIVERY_THRESHOLD) * 100);
 
   const applyCoupon = () => {
     if (coupon.trim().toUpperCase() === 'BOOK10') {
-      setCouponApplied(true);
-      setCouponError('');
+      setCouponApplied(true); setCouponError('');
     } else {
-      setCouponError('Invalid coupon code');
-      setCouponApplied(false);
+      setCouponError('Invalid coupon code'); setCouponApplied(false);
     }
   };
-
-  const INPUT = 'w-full px-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition bg-white';
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
-        .cart-root { font-family:'DM Sans',sans-serif; background:#f8fafc; min-height:100vh; }
-        @keyframes fadeSlideIn  { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes fadeSlideOut { from{opacity:1;transform:translateX(0)}    to{opacity:0;transform:translateX(30px);max-height:120px} }
-        @keyframes countUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-        .item-enter { animation: fadeSlideIn .3s cubic-bezier(.22,1,.36,1) both; }
-        .item-exit  { animation: fadeSlideOut .35s cubic-bezier(.22,1,.36,1) both; }
-        .count-anim { animation: countUp .25s cubic-bezier(.22,1,.36,1) both; }
-        .summary-card { background:#fff; border-radius:20px; padding:24px; box-shadow:0 2px 16px rgba(0,0,0,0.06); border:1px solid #e8f0e9; }
-        .cart-item { background:#fff; border-radius:16px; padding:16px; border:1px solid #e8f0e9; box-shadow:0 1px 4px rgba(0,0,0,0.04); transition:box-shadow .2s; }
-        .cart-item:hover { box-shadow:0 4px 16px rgba(30,58,138,0.10); }
-        .badge-free { background:#dbeafe; color:#1E3A8A; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        .cart-root { font-family:'Plus Jakarta Sans',sans-serif; background:#f4f6f9; min-height:100vh; }
+        @keyframes slideRight { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes slideLeft  { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(40px);max-height:0;margin:0;padding:0;overflow:hidden} }
+        @keyframes numPop { 0%{transform:scale(0.7)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+        .item-in   { animation: slideRight .4s cubic-bezier(.22,1,.36,1) both; }
+        .item-out  { animation: slideLeft  .4s cubic-bezier(.22,1,.36,1) both; overflow:hidden; }
+        .num-pop   { animation: numPop .25s cubic-bezier(.22,1,.36,1) both; }
       `}</style>
 
       <div className="cart-root">
-        <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-10">
 
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          {/* ── Header ── */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
             <div>
-              <h1 style={{ fontFamily: 'Lora,serif', fontSize: 26, fontWeight: 700, color: '#0f172a' }}>
-                My Cart
-              </h1>
-              <p style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-                {items.length} {items.length === 1 ? 'item' : 'items'} in your cart
-              </p>
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Cart</h1>
+              <p className="text-sm text-gray-400 font-semibold mt-1">{totalQty} {totalQty === 1 ? 'item' : 'items'} ready for checkout</p>
             </div>
-            {/* Progress bar toward free delivery */}
-            <div className="hidden md:flex flex-col items-end gap-1" style={{ minWidth: 220 }}>
-              <p style={{ fontSize: 12, color: '#64748b' }}>
-                {subtotal >= FREE_DELIVERY_THRESHOLD
-                  ? <span className="badge-free">🎉 Free delivery unlocked!</span>
-                  : <>Add <strong style={{ color: '#1E3A8A' }}>৳{FREE_DELIVERY_THRESHOLD - subtotal}</strong> more for free delivery</>
-                }
-              </p>
-              <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: '#e8f0e9' }}>
+
+            {/* Free delivery progress */}
+            <div className="flex flex-col gap-2" style={{ minWidth: 240 }}>
+              {subtotal >= FREE_DELIVERY_THRESHOLD ? (
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-200">
+                  <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                  <span className="text-xs font-black text-emerald-700 uppercase tracking-wide">Free Delivery Unlocked!</span>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 font-semibold text-right">
+                  Add <span className="text-blue-600 font-black">৳{(FREE_DELIVERY_THRESHOLD - subtotal).toLocaleString()}</span> more for free delivery
+                </p>
+              )}
+              <div className="w-full h-1.5 rounded-full bg-gray-200 overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, (subtotal / FREE_DELIVERY_THRESHOLD) * 100)}%`, background: 'linear-gradient(90deg,#3A9AFF,#60A5FA)' }}
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${freeProgress}%`, background: 'linear-gradient(90deg,#3b82f6,#1d4ed8)' }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Empty state */}
+          {/* ── Empty state ── */}
           {items.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: '#eff6ff' }}>
-                <svg className="w-12 h-12" fill="none" stroke="#3A9AFF" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.4} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+            <div className="flex flex-col items-center justify-center py-32 gap-6">
+              <div className="w-28 h-28 rounded-[2rem] flex items-center justify-center bg-blue-50 border border-blue-100 shadow-xl shadow-blue-100/50">
+                <svg className="w-14 h-14 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <p style={{ fontFamily: 'Lora,serif', fontSize: 20, fontWeight: 600, color: '#1e293b' }}>Your cart is empty</p>
-              <p style={{ fontSize: 14, color: '#64748b' }}>Add some books to get started!</p>
-              <button className="btn-primary mt-2" style={{ background: '#3A9AFF', color: '#fff', border: 'none', borderRadius: 12, padding: '10px 28px', fontWeight: 700, cursor: 'pointer' }}>
+              <div className="text-center">
+                <p className="text-2xl font-black text-gray-900">Your cart is empty</p>
+                <p className="text-sm text-gray-400 mt-2">Discover thousands of books and add them here!</p>
+              </div>
+              <button className="px-8 py-4 rounded-2xl font-black text-white text-sm transition-all hover:-translate-y-1 shadow-xl shadow-blue-200/50"
+                style={{ background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)' }}>
                 Browse Books
               </button>
             </div>
           )}
 
           {items.length > 0 && (
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-              {/* ── ITEMS ── */}
-              <div className="flex-1 flex flex-col gap-3">
+              {/* ── LEFT: Cart Items ── */}
+              <div className="flex-1 flex flex-col gap-4">
                 {items.map((item, idx) => (
                   <div
                     key={item.id}
-                    className={`cart-item ${removing === item.id ? 'item-exit' : 'item-enter'}`}
-                    style={{ animationDelay: `${idx * 0.05}s` }}
+                    className={`group bg-white rounded-[1.75rem] p-5 border border-gray-100 shadow-sm hover:shadow-lg hover:shadow-gray-100/80 transition-all duration-300 ${removing === item.id ? 'item-out' : 'item-in'}`}
+                    style={{ animationDelay: `${idx * 0.06}s` }}
                   >
-                    <div className="flex gap-4">
-                      {/* Cover */}
-                      <div className="flex-shrink-0 rounded-xl overflow-hidden shadow-md" style={{ width: 72, height: 100 }}>
+                    <div className="flex gap-5">
+                      {/* Book cover */}
+                      <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-md" style={{ width: 80, height: 112 }}>
                         <Img src={item.cover} alt={item.title} className="w-full h-full object-cover" fallback={item.coverFallback} />
                       </div>
 
                       {/* Details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', lineHeight: 1.3 }}>{item.title}</p>
-                            <p style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{item.author}</p>
-                            <span style={{ fontSize: 11, background: '#eff6ff', color: '#1E3A8A', border: '1px solid #bfdbfe', borderRadius: 6, padding: '1px 7px', display: 'inline-block', marginTop: 4, fontWeight: 600 }}>
-                              {item.edition}
-                            </span>
+                            <p className="font-black text-gray-900 text-base leading-snug">{item.title}</p>
+                            <p className="text-sm text-gray-400 font-semibold mt-1">{item.author}</p>
+                            <span className="inline-block mt-2 px-3 py-0.5 text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 rounded-full">{item.edition}</span>
                           </div>
                           <button
                             onClick={() => removeItem(item.id)}
-                            className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full transition-all"
-                            style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}
+                            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl transition-all bg-gray-50 text-gray-300 hover:bg-rose-50 hover:text-rose-500 border border-gray-100 hover:border-rose-100"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
                         </div>
 
-                        <div className="flex items-center justify-between mt-3">
-                          {/* Price */}
-                          <div className="flex items-center gap-2">
-                            <span style={{ fontSize: 16, fontWeight: 800, color: '#1E3A8A' }}>৳{(item.price * item.qty).toLocaleString()}</span>
+                        <div className="flex items-center justify-between mt-4">
+                          {/* Pricing */}
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-black text-gray-900">৳{(item.price * item.qty).toLocaleString()}</span>
                             {item.originalPrice && (
-                              <span style={{ fontSize: 12, color: '#94a3b8', textDecoration: 'line-through' }}>৳{(item.originalPrice * item.qty).toLocaleString()}</span>
+                              <span className="text-sm text-gray-300 line-through font-semibold">৳{(item.originalPrice * item.qty).toLocaleString()}</span>
                             )}
                           </div>
-                          {/* Qty */}
-                          <div className="flex items-center gap-2">
-                            <QtyBtn onClick={() => updateQty(item.id, -1)} disabled={item.qty <= 1}>−</QtyBtn>
-                            <span key={item.qty} className="count-anim" style={{ fontSize: 14, fontWeight: 700, color: '#1e293b', minWidth: 20, textAlign: 'center' }}>
-                              {item.qty}
-                            </span>
-                            <QtyBtn onClick={() => updateQty(item.id, 1)}>+</QtyBtn>
+
+                          {/* Qty Controls */}
+                          <div className="flex items-center gap-1 p-1 rounded-2xl bg-gray-50 border border-gray-100">
+                            <button
+                              onClick={() => updateQty(item.id, -1)}
+                              disabled={item.qty <= 1}
+                              className="w-8 h-8 flex items-center justify-center rounded-xl font-black text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:shadow-sm text-gray-600"
+                            >−</button>
+                            <span key={item.qty} className="num-pop min-w-[2rem] text-center text-sm font-black text-gray-900">{item.qty}</span>
+                            <button
+                              onClick={() => updateQty(item.id, 1)}
+                              className="w-8 h-8 flex items-center justify-center rounded-xl font-black text-sm transition-all hover:bg-white hover:shadow-sm text-blue-600"
+                            >+</button>
                           </div>
                         </div>
                       </div>
@@ -194,85 +171,104 @@ export default function Cart({ onCheckout }: CartProps) {
                   </div>
                 ))}
 
-                {/* Coupon */}
-                <div className="summary-card mt-2">
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 10 }}>Have a coupon?</p>
-                  <div className="flex gap-2">
+                {/* ── Coupon Card ── */}
+                <div className="bg-white rounded-[1.75rem] p-6 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+                    </div>
+                    <h3 className="font-black text-gray-900 text-base">Apply Coupon</h3>
+                  </div>
+                  <div className="flex gap-3">
                     <input
                       type="text"
-                      placeholder="Enter coupon code (try: BOOK10)"
+                      placeholder="Enter code (try: BOOK10)"
                       value={coupon}
                       onChange={e => { setCoupon(e.target.value); setCouponError(''); }}
-                      className={INPUT}
-                      style={{ borderColor: couponApplied ? '#3A9AFF' : couponError ? '#ef4444' : undefined }}
+                      className="flex-1 px-5 py-3.5 text-sm font-semibold rounded-2xl border bg-gray-50 outline-none transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                      style={{ borderColor: couponApplied ? '#3b82f6' : couponError ? '#ef4444' : '#e5e7eb' }}
                     />
                     <button
                       onClick={applyCoupon}
-                      className="px-4 py-2 rounded-xl text-sm font-bold transition-all flex-shrink-0"
-                      style={{ background: couponApplied ? '#3A9AFF' : '#0f172a', color: '#fff', border: 'none', cursor: 'pointer' }}
+                      className="px-6 py-3.5 rounded-2xl text-sm font-black text-white transition-all hover:-translate-y-0.5 flex-shrink-0"
+                      style={{ background: couponApplied ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#1e293b,#0f172a)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
                     >
                       {couponApplied ? '✓ Applied' : 'Apply'}
                     </button>
                   </div>
-                  {couponError && <p style={{ fontSize: 12, color: '#ef4444', marginTop: 6 }}>{couponError}</p>}
-                  {couponApplied && <p style={{ fontSize: 12, color: '#3A9AFF', marginTop: 6, fontWeight: 600 }}>🎉 10% discount applied!</p>}
+                  {couponError && <p className="text-rose-500 text-xs font-bold mt-3 px-1">{couponError}</p>}
+                  {couponApplied && <p className="text-emerald-600 text-xs font-black mt-3 px-1">🎉 10% discount successfully applied!</p>}
                 </div>
               </div>
 
-              {/* ── ORDER SUMMARY ── */}
-              <div style={{ width: 300, flexShrink: 0 }}>
-                <div className="summary-card sticky top-6">
-                  <h2 style={{ fontFamily: 'Lora,serif', fontSize: 17, fontWeight: 700, color: '#0f172a', marginBottom: 18 }}>Order Summary</h2>
+              {/* ── RIGHT: Dark Order Summary ── */}
+              <div className="w-full lg:w-[340px] flex-shrink-0">
+                <div className="bg-gray-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-gray-900/30 sticky top-6 relative overflow-hidden">
+                  {/* Glow accent */}
+                  <div className="absolute -bottom-8 -right-8 w-36 h-36 bg-blue-600 rounded-full blur-[72px] opacity-30" />
 
-                  <div className="flex flex-col gap-3" style={{ fontSize: 13 }}>
-                    <div className="flex justify-between">
-                      <span style={{ color: '#64748b' }}>Subtotal ({items.reduce((s, it) => s + it.qty, 0)} items)</span>
-                      <span style={{ fontWeight: 600, color: '#1e293b' }}>৳{subtotal.toLocaleString()}</span>
-                    </div>
+                  <div className="relative z-10">
+                    <h2 className="text-xl font-black tracking-tight mb-8">Order Summary</h2>
+
+                    {/* Savings callout */}
                     {savings > 0 && (
-                      <div className="flex justify-between">
-                        <span style={{ color: '#3A9AFF' }}>You save</span>
-                        <span style={{ fontWeight: 700, color: '#3A9AFF' }}>−৳{savings.toLocaleString()}</span>
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-6">
+                        <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p className="text-xs font-black text-emerald-400">You're saving <span className="text-emerald-300">৳{savings.toLocaleString()}</span> on this order!</p>
                       </div>
                     )}
-                    {couponApplied && (
-                      <div className="flex justify-between">
-                        <span style={{ color: '#3A9AFF' }}>Coupon (BOOK10)</span>
-                        <span style={{ fontWeight: 700, color: '#3A9AFF' }}>−৳{discount.toLocaleString()}</span>
+
+                    {/* Line items */}
+                    <div className="space-y-4 mb-6">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400 font-semibold">Subtotal ({totalQty} items)</span>
+                        <span className="font-black">৳{subtotal.toLocaleString()}</span>
                       </div>
-                    )}
-                    <div className="flex justify-between items-center">
-                      <span style={{ color: '#64748b' }}>Delivery</span>
-                      {delivery === 0
-                        ? <span className="badge-free">FREE</span>
-                        : <span style={{ fontWeight: 600, color: '#1e293b' }}>৳{delivery}</span>
-                      }
+                      {couponApplied && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-purple-400 font-semibold">Coupon (BOOK10)</span>
+                          <span className="font-black text-purple-400">−৳{discount.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400 font-semibold">Delivery</span>
+                        {delivery === 0
+                          ? <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">FREE</span>
+                          : <span className="font-black">৳{delivery}</span>
+                        }
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-white/10 mb-6" />
+
+                    <div className="flex justify-between items-end mb-8">
+                      <div>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Total Amount</p>
+                        <p className="text-4xl font-black tracking-tighter">৳{total.toLocaleString()}</p>
+                      </div>
+                      {delivery === 0 && <span className="text-[10px] text-emerald-400 font-black uppercase">Free Shipping</span>}
+                    </div>
+
+                    <button
+                      onClick={() => onCheckout(items)}
+                      className="group w-full flex items-center justify-center gap-3 py-5 rounded-3xl font-black text-sm transition-all hover:-translate-y-1 active:scale-95 relative overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)', boxShadow: '0 6px 24px rgba(59,130,246,0.35)' }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                      Proceed to Checkout
+                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+
+                    <div className="flex items-center justify-center gap-2 mt-5">
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                      <p className="text-[11px] text-gray-500 font-semibold">Secure checkout · Cash on Delivery</p>
                     </div>
                   </div>
-
-                  <div className="my-4" style={{ height: 1, background: '#e8f0e9' }} />
-
-                  <div className="flex justify-between items-center mb-5">
-                    <span style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>Total</span>
-                    <span style={{ fontWeight: 800, fontSize: 20, color: '#1E3A8A' }}>৳{total.toLocaleString()}</span>
-                  </div>
-
-                  <button
-                    onClick={() => onCheckout(items)}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all"
-                    style={{ background: 'linear-gradient(135deg,#3A9AFF,#1D4ED8)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 6px 20px rgba(58,154,255,0.35)' }}
-                  >
-                    Proceed to Checkout
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </button>
-
-                  <p style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 12 }}>
-                    🔒 Secure checkout · Cash on Delivery available
-                  </p>
                 </div>
               </div>
+
             </div>
           )}
         </div>
