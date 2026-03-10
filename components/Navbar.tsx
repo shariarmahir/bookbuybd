@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 
 export default function Navbar() {
   const [searchValue, setSearchValue] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <header className="w-full bg-[#A7E6FF] shadow-sm sticky top-0 z-50">
@@ -13,11 +12,9 @@ export default function Navbar() {
       <div className="border-b border-gray-100 text-xs text-gray-500 py-1 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
           <div className="flex gap-4 hidden lg:flex">
-            <Link href="/book" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Book Details</Link>
             <Link href="/shop" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Cart</Link>
             <Link href="/emergency-printing" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Printing Service</Link>
             <Link href="/shop" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Order Flow</Link>
-            <Link href="/refund" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Refunds</Link>
           </div>
           <div className="flex gap-4">
             <a href="#" className="hover:text-brand-600 font-bold transition-colors">Follow us on Facebook</a>
@@ -29,23 +26,6 @@ export default function Navbar() {
       {/* Main nav - row 1: logo + icons (mobile), logo + search + icons (desktop) */}
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center gap-3 md:gap-4">
-          {/* Hamburger menu button - mobile only */}
-          <button
-            className="md:hidden text-gray-600 hover:text-brand-600 shrink-0"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
-
           {/* Logo */}
           <Link href="/" className="flex items-center shrink-0 mr-1 md:mr-2">
             <img src="/logo.png" alt="BookBuyBD Logo" className="h-10 md:h-12 w-auto object-contain" />
@@ -119,28 +99,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Category nav - Desktop: always visible & evenly spaced, Mobile: toggled */}
-      <nav className={`border-t border-gray-100 bg-[#A7E6FF] ${mobileMenuOpen ? 'block' : 'hidden'} md:block transition-colors duration-300`}>
-        <div className="max-w-7xl mx-auto px-4">
-          <ul className="flex flex-col md:flex-row md:items-center md:justify-between text-sm">
-            {['Books', 'Audiobooks', 'Toys', 'Movies', 'Games', 'Coffee', 'Others', 'Gifts & Deals', 'Refund'].map((item, i) => (
-              <li key={i} className="md:flex-1 md:text-center group">
-                <Link
-                  href={item === 'Books' ? '/categories' : item === 'Refund' ? '/refund' : '#'}
-                  className={`relative block px-3 py-3 whitespace-nowrap font-medium transition-all duration-300 ${item === 'Gifts & Deals'
-                    ? 'text-brand-600'
-                    : 'text-gray-700 hover:text-brand-600'
-                    }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item}
-                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-brand-600 transition-all duration-300 group-hover:w-full ${item === 'Gifts & Deals' ? 'w-full' : ''}`} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </nav>
     </header>
   );
 }

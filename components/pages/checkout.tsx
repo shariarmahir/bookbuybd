@@ -13,6 +13,7 @@ interface CheckoutProps {
   onBack: () => void;
   onConfirm: (form: CheckoutForm) => Promise<void> | void;
   onEdit: (form: CheckoutForm) => void;
+  initialForm?: CheckoutForm;
   isSubmitting?: boolean;
   submitError?: string | null;
 }
@@ -32,9 +33,17 @@ function validate(f: CheckoutForm): Errors {
   return e;
 }
 
-export default function Checkout({ items, onBack, onConfirm, onEdit, isSubmitting = false, submitError = null }: CheckoutProps) {
+export default function Checkout({
+  items,
+  onBack,
+  onConfirm,
+  onEdit,
+  initialForm = EMPTY_FORM,
+  isSubmitting = false,
+  submitError = null,
+}: CheckoutProps) {
   const [step, setStep] = useState<Step>('form');
-  const [form, setForm] = useState<CheckoutForm>(EMPTY_FORM);
+  const [form, setForm] = useState<CheckoutForm>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
 
