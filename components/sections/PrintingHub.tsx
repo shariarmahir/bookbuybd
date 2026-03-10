@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 /* ══════════════════════════════════════════
    DATA — all printing categories & items
@@ -91,13 +92,13 @@ function UploadArea({ label }: { label: string }) {
       onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]); }}
       className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center py-6 px-4 cursor-pointer transition-all select-none ${drag ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/30'}`}
     >
-      <input ref={ref} type="file" className="hidden" onChange={e => e.target.files?.[0] && handle(e.target.files[0])} />
+      <input ref={ref} type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) handle(e.target.files[0]); }} />
       <svg className="w-8 h-8 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
       </svg>
       <p className="text-xs font-semibold text-gray-600 mb-0.5">{label}</p>
       {file
-        ? <p className="text-[11px] text-blue-500 text-center break-all px-1">{file}</p>
+        ? <p className="text-[11px] text-blue-500 text-center break-all px-1 font-medium">{file}</p>
         : <p className="text-[11px] text-gray-400 text-center leading-relaxed">Drag and drop to upload<br />or <span className="text-blue-500">choose file</span></p>
       }
     </div>
@@ -212,21 +213,21 @@ function ItemSelector({ categoryId, selected, onToggle }: {
 /* ════════════════════════════════════════════
    MAIN COMPONENT
 ════════════════════════════════════════════ */
+
 export default function PrintingHub() {
+  const router = useRouter();
   const [category, setCategory] = useState<string | null>(null);
   const [selectedItems, setItems] = useState<string[]>([]);
   const [budget, setBudget] = useState('');
   const [quantity, setQuantity] = useState('');
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [isEmergency, setEmergency] = useState(false);
 
   const toggleItem = (name: string) =>
-    setItems(p => p.includes(name) ? p.filter(i => i !== name) : [...p, name]);
+    setItems(p => p.includes(name) ? p.filter((i: string) => i !== name) : [...p, name]);
 
-  const handleSubmit = (emergency: boolean) => {
-    setEmergency(emergency);
-    alert(`${emergency ? '🚨 Emergency' : '🖨️ Standard'} Printing request submitted!\nItems: ${selectedItems.join(', ') || 'None selected'}`);
+  const handleSubmit = (isEmergency: boolean) => {
+    router.push(`/emergency-printing?emergency=${isEmergency}`);
   };
 
   return (
@@ -289,19 +290,18 @@ export default function PrintingHub() {
         {/* ── Main card ── */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
 
-          {/* Left + Right layout */}
-          <div className="flex gap-0">
+          <div className="flex flex-col md:flex-row gap-0">
 
             {/* ── LEFT: Your Order ── */}
-            <div className="flex flex-col border-r border-gray-100" style={{ width: 230, minWidth: 230 }}>
+            <div className="flex flex-col border-b md:border-b-0 md:border-r border-gray-100 w-full md:w-[230px]">
               <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
                 <h3 className="text-sm font-extrabold text-gray-800">Your Order</h3>
                 <p className="text-[10px] text-gray-400 mt-0.5">Selected items appear here</p>
               </div>
 
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto max-h-[300px] md:max-h-none">
                 {selectedItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-32 text-gray-300 px-4 text-center">
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-300 px-4 text-center">
                     <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -309,7 +309,7 @@ export default function PrintingHub() {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-50">
-                    {selectedItems.map(name => {
+                    {selectedItems.map((name: string) => {
                       const cat = CATEGORIES.find(c => c.items.some(i => i.name === name));
                       const item = cat?.items.find(i => i.name === name);
                       return (
@@ -330,7 +330,6 @@ export default function PrintingHub() {
                 )}
               </div>
 
-              {/* Qty + estimate footer */}
               <div className="px-4 py-4 border-t border-gray-100 space-y-2 bg-gray-50">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[10px] text-gray-500 font-medium">Quantity</span>
@@ -354,13 +353,11 @@ export default function PrintingHub() {
             <div className="flex-1 px-6 py-5 flex flex-col gap-4">
               <h2 className="text-lg font-extrabold text-gray-900 border-b border-gray-100 pb-2 mb-1">Configure Your Print Order</h2>
 
-              {/* Category dropdown */}
               <div>
                 <label className="block text-sm text-gray-800 font-bold mb-1.5">Printing Category</label>
                 <CategoryDropdown selected={category} onSelect={id => { setCategory(id); setItems([]); }} />
               </div>
 
-              {/* Item selector grid */}
               <div>
                 <label className="block text-sm text-gray-800 font-bold mb-1.5">
                   Select Items
@@ -373,7 +370,6 @@ export default function PrintingHub() {
                 <ItemSelector categoryId={category} selected={selectedItems} onToggle={toggleItem} />
               </div>
 
-              {/* Budget + Date row */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm text-gray-800 font-bold mb-1.5">Budget (BDT)</label>
@@ -403,7 +399,6 @@ export default function PrintingHub() {
                 </div>
               </div>
 
-              {/* Notes */}
               <div>
                 <label className="block text-sm text-gray-800 font-bold mb-1.5">Special Instructions</label>
                 <textarea
@@ -415,24 +410,22 @@ export default function PrintingHub() {
                 />
               </div>
 
-              {/* Upload */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 flex items-center justify-center gap-2 font-semibold text-xs transition">
+                  <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 flex items-center justify-center gap-2 font-semibold text-xs transition px-4">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
-                    Upload Design File (Vector preferred)
+                    Upload Design File
                   </button>
                 </div>
-                <p className="text-[10px] text-gray-400 text-center mb-3">Accepted: .svg, .eps, .ai, .pdf, .png, .jpg</p>
+                <p className="text-[10px] text-gray-400 text-center mb-3">Accepted: .pdf, .ai, .psd, .png, .jpg</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <UploadArea label="Primary Design / Logo" />
-                  <UploadArea label="Secondary Design / Brand Guide" />
+                  <UploadArea label="Logo / Design" />
+                  <UploadArea label="Brand Guide" />
                 </div>
               </div>
 
-              {/* Action buttons */}
               <div className="flex items-center gap-3 pt-1">
                 <button
                   onClick={() => handleSubmit(false)}
@@ -457,19 +450,18 @@ export default function PrintingHub() {
           </div>
         </div>
 
-        {/* ── What we print — icon showcase ── */}
-        <div className="mt-8 grid grid-cols-5 gap-3">
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           {[
             { icon: '📚', label: 'Books & Thesis' },
-            { icon: '🪪', label: 'ID & Visiting Cards' },
+            { icon: '🪪', label: 'ID Cards' },
             { icon: '📜', label: 'Certificates' },
-            { icon: '🏳️', label: 'Banners & Posters' },
-            { icon: '🛍️', label: 'Event Bags' },
-            { icon: '🏆', label: 'Trophies & Awards' },
-            { icon: '☕', label: 'Mugs & Gifts' },
+            { icon: '🏳️', label: 'Banners' },
+            { icon: '🛍️', label: 'Bags' },
+            { icon: '🏆', label: 'Awards' },
+            { icon: '☕', label: 'Mugs' },
             { icon: '🔑', label: 'Keyrings' },
             { icon: '💌', label: 'Invitations' },
-            { icon: '🧾', label: 'Invoices & Forms' },
+            { icon: '🧾', label: 'Invoices' },
           ].map(p => (
             <div key={p.label} className="bg-white rounded-xl border border-gray-100 flex flex-col items-center py-4 px-2 hover:border-blue-200 hover:shadow-sm transition cursor-pointer group">
               <span className="text-2xl mb-1.5 group-hover:scale-110 transition-transform">{p.icon}</span>
