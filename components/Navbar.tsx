@@ -1,11 +1,29 @@
 'use client';
-import { useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export default function Navbar() {
   const [searchValue, setSearchValue] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const qParam = searchParams.get('q') ?? '';
+
+  useEffect(() => {
+    if (pathname !== '/search') return;
+    setSearchValue(qParam);
+  }, [pathname, qParam]);
+
+  const submitSearch = useCallback((e?: FormEvent) => {
+    e?.preventDefault();
+    const q = searchValue.trim();
+    if (!q) return;
+    setMobileMenuOpen(false);
+    router.push(`/search?q=${encodeURIComponent(q)}`);
+  }, [router, searchValue]);
 
   return (
     <header className="w-full bg-[#A7E6FF] shadow-sm sticky top-0 z-50">
@@ -57,18 +75,24 @@ export default function Navbar() {
             animate={{ flex: searchValue ? 1.5 : 1 }}
             className="hidden md:flex flex-1 mx-4 items-center border border-gray-200 rounded-full px-4 py-2 bg-white/50 backdrop-blur-sm focus-within:bg-white focus-within:shadow-md transition-all duration-300"
           >
-            <input
-              type="text"
-              placeholder="Search books by title, category, author..."
-              className="flex-1 bg-transparent text-sm outline-none text-gray-800 font-medium min-w-0 placeholder:text-gray-500"
-              value={searchValue}
-              onChange={e => setSearchValue(e.target.value)}
-            />
-            <button className="ml-2 text-gray-400 hover:text-brand-600 shrink-0 transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+            <form className="flex items-center w-full" role="search" onSubmit={submitSearch}>
+              <input
+                type="search"
+                placeholder="Search books by title, category, author..."
+                className="flex-1 bg-transparent text-sm outline-none text-gray-800 font-medium min-w-0 placeholder:text-gray-500"
+                value={searchValue}
+                onChange={e => setSearchValue(e.target.value)}
+              />
+              <button
+                type="submit"
+                aria-label="Search"
+                className="ml-2 text-gray-400 hover:text-brand-600 shrink-0 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </form>
           </motion.div>
 
           {/* Right side: Location + Profile + Cart */}
@@ -103,20 +127,24 @@ export default function Navbar() {
         </div>
 
         {/* Mobile search - full width below logo row */}
-        <div className="md:hidden mt-2 flex items-center border border-gray-200 rounded-full px-3 py-2 bg-gray-50">
+        <form
+          className="md:hidden mt-2 flex items-center border border-gray-200 rounded-full px-3 py-2 bg-gray-50"
+          role="search"
+          onSubmit={submitSearch}
+        >
           <input
-            type="text"
+            type="search"
             placeholder="Search books..."
             className="flex-1 bg-transparent text-sm outline-none text-gray-600 min-w-0"
             value={searchValue}
             onChange={e => setSearchValue(e.target.value)}
           />
-          <button className="ml-2 text-gray-400 hover:text-brand-600 shrink-0">
+          <button type="submit" aria-label="Search" className="ml-2 text-gray-400 hover:text-brand-600 shrink-0">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </button>
-        </div>
+        </form>
       </div>
 
       {/* Category nav - Desktop: always visible & evenly spaced, Mobile: toggled */}
