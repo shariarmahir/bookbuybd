@@ -126,7 +126,7 @@ export default function Navbar() {
             {['Books', 'Audiobooks', 'Toys', 'Movies', 'Games', 'Coffee', 'Others', 'Gifts & Deals', 'Refund'].map((item, i) => (
               <li key={i} className="md:flex-1 md:text-center group">
                 <Link
-                  href={item === 'Books' ? '/categories' : item === 'Refund' ? '/refund' : '#'}
+                  href={item === 'Refund' ? '/refund' : '/categories'}
                   className={`relative block px-3 py-3 whitespace-nowrap font-medium transition-all duration-300 ${item === 'Gifts & Deals'
                     ? 'text-brand-600'
                     : 'text-gray-700 hover:text-brand-600'

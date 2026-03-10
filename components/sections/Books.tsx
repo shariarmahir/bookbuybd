@@ -102,7 +102,7 @@ function BookCoverImg({ src, color, title }: { src: string; color: string; title
 ══════════════════════════════════════ */
 function Sidebar({ onGenreClick }: { onGenreClick: (g: string) => void }) {
   return (
-    <aside className="flex flex-col gap-8" style={{ width: 180, minWidth: 180 }}>
+    <aside className="hidden md:flex flex-col gap-8" style={{ width: 180, minWidth: 180 }}>
       <div>
         <h3 className="text-sm font-bold text-gray-800 mb-3">Author of the week</h3>
         <ul className="space-y-2.5">
@@ -280,7 +280,7 @@ function CategoryDetailPage({
     <div>
       {/* ── Hero banner ── */}
       <div
-        className="rounded-2xl px-8 py-8 mb-7 relative overflow-hidden"
+        className="rounded-2xl px-6 py-6 md:px-8 md:py-8 mb-7 relative overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${meta.color} 0%, ${meta.color}cc 100%)` }}
       >
         {/* Decorative circles */}
@@ -298,7 +298,7 @@ function CategoryDetailPage({
           Back to all books
         </button>
 
-        <div className="flex items-end justify-between relative z-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between relative z-10 gap-4 sm:gap-2">
           <div>
             <span
               className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-2"
@@ -311,7 +311,7 @@ function CategoryDetailPage({
           </div>
 
           {/* Other genre quick links */}
-          <div className="flex gap-2 flex-wrap justify-end max-w-xs">
+          <div className="flex gap-2 flex-wrap sm:justify-end sm:max-w-xs">
             {GENRES.filter(g => g !== 'All Genres' && g !== genre).map(g => (
               <button
                 key={g}
@@ -352,7 +352,7 @@ function CategoryDetailPage({
           <p className="text-sm font-medium">No books in this genre yet</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           {shown.map(book => <BookCardGrid key={book.id} book={book} />)}
         </div>
       )}
@@ -430,7 +430,7 @@ function GenrePreviewSection({
       </div>
 
       {/* Preview cards row */}
-      <div className="grid grid-cols-2 gap-x-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
         {books.map(book => <BookCard key={book.id} book={book} />)}
       </div>
     </div>
@@ -470,14 +470,14 @@ export default function Books() {
         }
       `}</style>
 
-      <section className="max-w-5xl mx-auto px-6 py-10">
-        <div className="flex gap-8">
+      <section className="max-w-5xl mx-auto px-4 md:px-6 py-10">
+        <div className="flex flex-col md:flex-row gap-8">
 
           {/* ── Sidebar ── */}
           <Sidebar onGenreClick={goToDetail} />
 
           {/* ── Divider ── */}
-          <div className="w-px bg-gray-100 flex-shrink-0" />
+          <div className="hidden md:block w-px bg-gray-100 flex-shrink-0" />
 
           {/* ── Main content ── */}
           <div className="flex-1 min-w-0">

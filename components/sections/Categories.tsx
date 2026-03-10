@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 const categories = [
   {
     title: 'Books for Him',
@@ -24,13 +26,13 @@ const categories = [
 
 export default function Categories() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <section className="max-w-7xl mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {categories.map((cat, i) => (
-          <a
+          <Link
             key={i}
-            href="#"
-            className={`relative rounded-xl overflow-hidden ${cat.bg} flex flex-col justify-end min-h-[160px] group cursor-pointer hover:shadow-lg transition`}
+            href="/categories"
+            className={`relative rounded-xl overflow-hidden ${cat.bg} flex flex-col justify-end min-h-[140px] md:min-h-[160px] group cursor-pointer hover:shadow-lg transition`}
           >
             <img
               src={cat.imgUrl}
@@ -41,7 +43,7 @@ export default function Categories() {
               <h3 className={`font-bold text-base ${cat.textColor}`}>{cat.title}</h3>
               <p className="text-xs text-gray-600 mt-0.5">{cat.subtitle}</p>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
     </section>

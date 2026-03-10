@@ -21,10 +21,10 @@ export default function PrintingHub() {
           From books and ID cards to trophies and event bags — we print it all.
         </p>
 
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full px-4 sm:px-0">
           <button
             onClick={() => handleSubmit(false)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 transition"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-blue-200 transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -33,7 +33,7 @@ export default function PrintingHub() {
           </button>
           <button
             onClick={() => handleSubmit(true)}
-            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 active:scale-[0.98] text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-md shadow-red-200 transition"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 active:scale-[0.98] text-white font-bold text-sm px-6 py-3.5 rounded-xl shadow-md shadow-red-200 transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

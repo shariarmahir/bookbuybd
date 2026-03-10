@@ -129,7 +129,7 @@ function CartDrawer({ cart, onClose, onQty, onRemove }: {
     return (
         <>
             <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-            <div className="fixed right-0 top-0 h-full w-80 bg-white z-50 shadow-2xl flex flex-col">
+            <div className="fixed right-0 top-0 h-full w-full sm:w-80 bg-white z-50 shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <h2 className="text-sm font-extrabold text-gray-900">Your Cart ({qty})</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
@@ -375,7 +375,7 @@ function GenrePreviewSection({ genre, onViewMore, onAdd }: {
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
-            <div className="grid grid-cols-2 gap-x-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                 {books.map(b => <BookCardList key={b.id} book={b} onAdd={onAdd} />)}
             </div>
             {hasMore && (
@@ -410,7 +410,7 @@ function CategoryDetailPage({ genre, onBack, onGenreSwitch, onAdd }: {
             {/* Hero banner */}
             <div className="rounded-2xl p-5 mb-6 relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${m.color}, ${m.color}bb)` }}>
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
-                <div className="relative flex items-center justify-between gap-4">
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <button onClick={onBack} className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-medium mb-2 transition">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -447,7 +447,7 @@ function CategoryDetailPage({ genre, onBack, onGenreSwitch, onAdd }: {
                     <p className="text-sm font-medium">No books in this genre yet</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                     {shown.map(b => <BookCardGrid key={b.id} book={b} onAdd={onAdd} />)}
                 </div>
             )}

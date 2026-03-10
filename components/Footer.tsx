@@ -20,7 +20,7 @@ export default function Footer() {
   return (
     <footer className="bg-gradient-to-br from-[#3A9AFF] to-[#2d7acc] text-white mt-20">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -172,7 +172,7 @@ export default function Footer() {
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>+880 1712-345678</span>
+                <span>+880 1601-007703</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
@@ -184,7 +184,7 @@ export default function Footer() {
               </div>
             </div>
           </motion.div>
-        </div >
+        </div>
 
         <div className="border-t border-white/20 mt-8 pt-6 text-center text-sm text-white/80">
           <p>
@@ -192,7 +192,7 @@ export default function Footer() {
             Developed by Delta-Cortex.
           </p>
         </div>
-      </div >
-    </footer >
+      </div>
+    </footer>
   );
 }

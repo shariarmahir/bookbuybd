@@ -100,8 +100,8 @@ export default function HeroCarousel() {
             </div>
           </div>
 
-          {/* Side panel - hidden on mobile/tablet */}
-          <div className="hidden lg:flex w-56 flex-col gap-3">
+          {/* Side panel - stacks below on mobile/tablet, right side on desktop */}
+          <div className="flex flex-col sm:flex-row lg:flex-col lg:w-56 gap-3">
             <Link href="/shop" className="rounded-xl bg-white shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition cursor-pointer border border-gray-100 block">
               <div className="w-14 aspect-[2/3] bg-red-100 rounded flex-shrink-0 overflow-hidden">
                 <img
@@ -116,7 +116,7 @@ export default function HeroCarousel() {
                 <p className="text-xs text-gray-800 mt-1 font-bold leading-tight">Most Read Books</p>
               </div>
             </Link>
-            <div className="rounded-xl bg-amber-50 p-3 flex-1 flex flex-col justify-between hover:shadow-md transition cursor-pointer border border-amber-100/50">
+            <div className="rounded-xl bg-amber-50 p-3 flex-1 flex flex-col justify-between hover:shadow-md transition cursor-pointer border border-amber-100/50 min-h-[140px]">
               <p className="text-xs font-bold text-gray-800">Shop Bangladeshi Stories</p>
               <div className="grid grid-cols-2 gap-1.5 my-2">
                 {[2, 3, 4, 5].map(i => (

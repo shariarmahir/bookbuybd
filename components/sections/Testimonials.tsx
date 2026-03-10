@@ -46,8 +46,8 @@ const BENEFITS = [
 const REVIEWS = [
   {
     id: 1,
-    text: 'I have seen a very good online bookstore. I have not found anywhere else such a facility — they are able to deliver the product on time. I invite you all to book.com!',
-    name: 'Mr. Jhonsan',
+    text: 'বইগুলো হতে পাবার পর আমার প্রথম যে জিনিসটা মাথায় আসছে সেটা হলো, পেজটা কই ছিলো এত দিন? নীলক্ষেতে কতো দিন যে ঘুরছি এর জন্য অনেক অনেক ধন্যবাদ Book Buy BD কে এতো অল্প খরচে এরকম সার্ভিসের জন্য',
+    name: 'Fayem Hira',
     role: 'Regular Customer',
     image: '/images/review/review1.jpg',
     initials: 'MJ',
@@ -56,9 +56,9 @@ const REVIEWS = [
   },
   {
     id: 2,
-    text: 'I have bought a lot of books in online bookstores but nowhere else have I found a facility like book.com. They are very careful about their customers.',
-    name: 'Nir Eyal',
-    role: 'Author & Reader',
+    text: 'Excellent printing and binding, reliable professional service.Keep up this quality ',
+    name: 'Dip Saha',
+    role: 'Regular Customer',
     image: '/images/review/review2.jpg',
     initials: 'NE',
     color: '#16a34a',
@@ -66,9 +66,9 @@ const REVIEWS = [
   },
   {
     id: 3,
-    text: 'book.com has given me a new experience. They handle their customers in a very beautiful way and are able to deliver very fast. Thank you book.com!',
-    name: 'Ryan Hoover',
-    role: 'Product Designer',
+    text: 'I have printed 150 pages and have bound them as a book from Book Buy BD. For stitching purposes, they made the font smaller, which was not comfortable to read. So I asked them to make another one, and I would pay for that. But they gave the 2nd copy for free. I never expected I would experience something like this in Bangladesh. ',
+    name: 'Mishkatul jannat ',
+    role: 'Regular Customer',
     image: '/images/review/review3.jpg',
     initials: 'RH',
     color: '#ea580c',
@@ -76,8 +76,8 @@ const REVIEWS = [
   },
   {
     id: 4,
-    text: 'Excellent selection of books and super-fast delivery. I found rare titles here that I could not get anywhere else. The packaging was also very careful and neat.',
-    name: 'Sarah Ahmed',
+    text: 'I am super impressed by their quality and service...top-notch...highly recommended. Will order more inshallah.',
+    name: 'Ashik Hasan',
     role: 'University Student',
     image: '/images/review/review4.jpg',
     initials: 'SA',
@@ -86,8 +86,8 @@ const REVIEWS = [
   },
   {
     id: 5,
-    text: 'The website is very easy to use and the customer support team is incredibly helpful. I had an issue with my order and it was resolved within hours!',
-    name: 'Karim Hassan',
+    text: 'printed 3 books from them. At first I was not completely satisfied with the printing quality. So they reprinted the books without any charge! Was very surprised to see such customer service in Bangladesh. 100% recommended. ',
+    name: 'Yasir Arafat',
     role: 'Teacher',
     image: '/images/review/review5.jpg',
     initials: 'KH',
@@ -96,8 +96,8 @@ const REVIEWS = [
   },
   {
     id: 6,
-    text: 'I have been shopping here for over two years and the experience keeps getting better. The new arrivals section helped me discover some amazing authors.',
-    name: 'Priya Das',
+    text: 'If any of you want to print any book from PDF, there are many shops for this purpose. Among them, I can suggest Book Buy BD without any doubt. I have also checked some other shops but I have found that this shop gives some advantages over others, likke Printing and binding quality are very good and clear. I have also found that the cost is less than other shops. Also the shopkeepers behavior',
+    name: 'Shanjida Jui',
     role: 'Librarian',
     image: '/images/review/review6.jpg',
     initials: 'PD',
@@ -106,7 +106,7 @@ const REVIEWS = [
   },
   {
     id: 7,
-    text: 'Best online bookstore in Bangladesh by far. The prices are very reasonable and the delivery is always on time. Highly recommended to every book lover.',
+    text: 'I am someone who would highlight and underline equations, lines while reading book. So,  Although I downloaded all these books, It seems something was missing, So, I decided to print, as you can not find these books in Nilkhet. I heard about Book Buy BD before and for the first time took service from them. I am satisfied. I really liked the quick response, print quality.  I would definitely recommend them.',
     name: 'Tanvir Rahman',
     role: 'Software Engineer',
     image: '/images/review/review7.jpg',
@@ -116,8 +116,8 @@ const REVIEWS = [
   },
   {
     id: 8,
-    text: 'I ordered a customised printed book for my thesis and the quality was outstanding. The team was very professional and delivered exactly what I needed.',
-    name: 'Lena Müller',
+    text: 'A few days ago, I used Book Buy BD is pdf printing service for my pdf books. The printing quality and binding exceed my expectation. it is great to see a local business provides their quality service using mainly social media and still reach customer expectations. 👍👍👍',
+    name: 'Mahbub khan',
     role: 'PhD Researcher',
     image: '/images/review/review8.jpg',
     initials: 'LM',
@@ -126,8 +126,8 @@ const REVIEWS = [
   },
   {
     id: 9,
-    text: 'Gifted a set of books to my nephew and he was so happy! The gift-wrap option was a lovely touch. book.com made the whole experience truly special.',
-    name: 'James O\'Brien',
+    text: 'ধন্যবাদ Book Buy BD  কে.যেকোনো পিডিএফ/ওয়ার্ড ডকুমেন্টস সহজেই অত্যন্ত কম খরচে প্রিন্ট করাতে পারেন "Book Buy BD" ফেসবুক পেজ থেকে.অসম্ভব সুন্দর বাধাই,কালার প্রিন্টিং কোয়ালিটি আপনার মন জয় করে নিতে বাধ্য.খরচ:২.৫৯ টাকা উভয় পাশ A4 80 GSM অফসেট পেজ কালার প্রিন্ট.১.৭৯ টাকায় উভয় পাশ A4 80 GSM অফসেট পেজ সাদা কালো প্রিন্ট.এছাড়াও আরো পেজ কোয়ালিটি  প্রিন্ট ও এভেইলএবল.সফটকপি/পিডিএফ কপি এখন হয়ে উঠুক জ্যন্ত বই....  ',
+    name: "Fiaz Bin Khaled Pranjal",
     role: 'Parent',
     image: '/images/review/review9.jpg',
     initials: 'JO',
@@ -258,17 +258,24 @@ function ReviewCard({
 /* ══════════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════════ */
-const VISIBLE = 3;   // cards shown at once
 const INTERVAL = 3500; // ms per rotation
 
 export default function Testimonials() {
   const [startIdx, setStartIdx] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(3);
   const total = REVIEWS.length;
 
-  // Get 3 visible reviews (wrapping)
-  const visible = Array.from({ length: VISIBLE }, (_, i) => REVIEWS[(startIdx + i) % total]);
+  useEffect(() => {
+    const updateVisible = () => setVisibleCount(window.innerWidth < 768 ? 1 : 3);
+    updateVisible();
+    window.addEventListener('resize', updateVisible);
+    return () => window.removeEventListener('resize', updateVisible);
+  }, []);
+
+  // Get visible reviews (wrapping)
+  const visible = Array.from({ length: visibleCount }, (_, i) => REVIEWS[(startIdx + i) % total]);
 
   const next = useCallback(() => {
     setStartIdx(i => (i + 1) % total);
@@ -336,7 +343,7 @@ export default function Testimonials() {
             <div className="mb-8">
               <BookStack />
             </div>
-            <ul className="grid grid-cols-2 gap-x-10 gap-y-5">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
               {BENEFITS.map((b, i) => (
                 <li
                   key={i}
@@ -356,11 +363,11 @@ export default function Testimonials() {
         {/* ══ SECTION 2: Teacher Quote ══ */}
         <section className="w-full overflow-hidden" style={{ background: 'rgba(52, 185, 225, 1)' }}>
           <div className="max-w-5xl mx-auto px-6">
-            <div className="flex items-end gap-0">
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-0">
 
               {/* Person photo */}
-              <div className="person-block flex-shrink-0 flex items-end" style={{ width: 220 }}>
-                <div className="relative overflow-hidden" style={{ width: 200, height: 250 }}>
+              <div className="person-block flex-shrink-0 flex items-end w-48 sm:w-[220px]">
+                <div className="relative overflow-hidden w-full h-[200px] sm:h-[250px] rounded-t-3xl md:rounded-none md:rounded-tl-3xl">
                   <img
                     src="/images/review/teacher.jpg"
                     alt="Tom Byron"
@@ -384,7 +391,7 @@ export default function Testimonials() {
               </div>
 
               {/* Quote */}
-              <div className="quote-block flex-1 flex flex-col justify-center py-10 pl-8">
+              <div className="quote-block flex-1 flex flex-col justify-center py-6 sm:py-10 md:pl-8 text-center md:text-left items-center md:items-start">
                 <h3 className="text-2xl font-extrabold text-white mb-3 tracking-tight">Mahir Shariar Mahin</h3>
                 <p className="text-sm leading-relaxed max-w-md mb-5" style={{ color: 'hsla(165, 100%, 98%, 0.85)' }}>
                   Books really are your best friends as you can rely on them
@@ -415,7 +422,7 @@ export default function Testimonials() {
                 Customer feedback.
               </h2>
               <p className="text-xs text-gray-400 mt-1">
-                Showing {startIdx + 1}–{((startIdx + VISIBLE - 1) % total) + 1} of {total} reviews
+                Showing {startIdx + 1}–{((startIdx + visibleCount - 1) % total) + 1} of {total} reviews
               </p>
             </div>
 
@@ -453,8 +460,8 @@ export default function Testimonials() {
             />
           </div>
 
-          {/* Review cards grid — 3 visible, slide/fade on change */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Review cards grid — slide/fade on change */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {visible.map((review, i) => (
               <ReviewCard
                 key={`${animKey}-${i}`}
@@ -467,8 +474,8 @@ export default function Testimonials() {
           {/* Dot indicators */}
           <div className="flex justify-center gap-1.5 mt-6">
             {Array.from({ length: total }).map((_, i) => {
-              const isActive = i >= startIdx && i < startIdx + VISIBLE
-                || (startIdx + VISIBLE > total && i < (startIdx + VISIBLE) % total);
+              const isActive = i >= startIdx && i < startIdx + visibleCount
+                || (startIdx + visibleCount > total && i < (startIdx + visibleCount) % total);
               return (
                 <button
                   key={i}
