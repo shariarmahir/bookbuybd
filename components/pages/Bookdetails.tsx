@@ -68,9 +68,9 @@ const OTHER_BOOKS = [
 ];
 
 const EDITIONS = [
-    { type: 'Hardback', price: '$15.99', img: '/images/book-detail/edition1.jpg', color: '#c2410c', desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.' },
-    { type: 'Paperback', price: '$15.99', img: '/images/book-detail/edition2.jpg', color: '#7c3aed', desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.' },
-    { type: 'Ebook', price: '$15.99', img: '/images/book-detail/edition3.jpg', color: '#0d9488', desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.', stores: true },
+    { type: 'Hardback', price: 'TK 1250', img: '/images/book-detail/edition1.jpg', color: '#c2410c', desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.' },
+    { type: 'Paperback', price: 'TK 850', img: '/images/book-detail/edition2.jpg', color: '#7c3aed', desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.' },
+    { type: 'Ebook', price: 'TK 450', img: '/images/book-detail/edition3.jpg', color: '#0d9488', desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.', stores: true },
 ];
 
 const SIMILAR = [
@@ -92,9 +92,8 @@ const NAV_ITEMS = [
    PAGE
 ══════════════════════════════════════ */
 export default function BookDetails() {
-    const [saved, setSaved] = useState(false);
-    const [hidden, setHidden] = useState(false);
-    const [markRead, setMarkRead] = useState(false);
+    const [wishlisted, setWishlisted] = useState(false);
+    const [added, setAdded] = useState(false);
     const [descExpanded, setDescExpanded] = useState(false);
     const [sampleExpanded, setSampleExpanded] = useState(false);
 
@@ -264,25 +263,30 @@ export default function BookDetails() {
 
                                 {/* Action buttons */}
                                 <div className="flex flex-wrap gap-2 mt-4">
-                                    <button className={`act-btn ${saved ? 'on' : ''}`} onClick={() => setSaved(s => !s)}>
-                                        <svg className="w-3.5 h-3.5" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                    <button className={`act-btn ${wishlisted ? 'on' : ''}`} onClick={() => setWishlisted(s => !s)}>
+                                        <svg className="w-3.5 h-3.5" fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                                         </svg>
-                                        Save
+                                        Wishlist
                                     </button>
-                                    <button className={`act-btn ${hidden ? 'on' : ''}`} onClick={() => setHidden(h => !h)}>
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                        </svg>
-                                        Hide
+                                    <button
+                                        onClick={() => { setAdded(true); setTimeout(() => setAdded(false), 2000); }}
+                                        className={`shop-btn flex items-center gap-2 transition-all ${added ? 'bg-green-600 shadow-green-200' : ''}`}
+                                        style={added ? { background: '#10b981', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' } : {}}
+                                    >
+                                        {added ? (
+                                            <>
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                                                Added to Cart
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                                Add to Cart
+                                            </>
+                                        )}
                                     </button>
-                                    <button className={`act-btn ${markRead ? 'on' : ''}`} onClick={() => setMarkRead(m => !m)}>
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Mark Read
-                                    </button>
-                                    <Link href="/shop" className="shop-btn">
+                                    <Link href="/shop" className="flex items-center gap-2 px-6 bg-white border border-gray-200 text-gray-700 font-bold text-sm rounded-xl hover:border-brand-500 hover:text-brand-600 transition shadow-sm h-[40px]">
                                         Shop Now
                                     </Link>
                                 </div>
@@ -373,8 +377,8 @@ export default function BookDetails() {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <Link href="/shop" className="shop-btn" style={{ padding: '7px 16px', fontSize: 12 }}>
-                                                    Shop Now
+                                                <Link href="/shop">
+                                                    <button className="shop-btn" style={{ padding: '7px 16px', fontSize: 12 }}>Shop Now</button>
                                                 </Link>
                                             )}
                                         </div>
@@ -403,8 +407,10 @@ export default function BookDetails() {
                                                 <Stars count={b.rating} />
                                                 <span style={{ fontSize: 10, color: '#94a3b8' }}>({b.reviews})</span>
                                             </div>
-                                            <Link href="/shop" className="shop-btn mt-3 w-full text-center" style={{ padding: '8px 0', fontSize: 11 }}>
-                                                Shop Now
+                                            <Link href="/shop" className="w-full">
+                                                <button className="shop-btn mt-3 w-full" style={{ padding: '8px 0', fontSize: 11 }}>
+                                                    Shop Now
+                                                </button>
                                             </Link>
                                         </div>
                                     </div>

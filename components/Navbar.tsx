@@ -1,25 +1,27 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 export default function Navbar() {
   const [searchValue, setSearchValue] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="w-full bg-white shadow-sm sticky top-0 z-50">
+    <header className="w-full bg-[#A7E6FF] shadow-sm sticky top-0 z-50">
       {/* Top bar - hidden on mobile */}
       <div className="border-b border-gray-100 text-xs text-gray-500 py-1 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
           <div className="flex gap-4 hidden lg:flex">
-            <Link href="/book" className="hover:text-brand-600 font-medium">Book Details</Link>
-            <Link href="/shop" className="hover:text-brand-600 font-medium">Cart</Link>
-            <Link href="/shop" className="hover:text-brand-600 font-medium">Checkout</Link>
-            <Link href="/shop" className="hover:text-brand-600 font-medium">Order Flow</Link>
+            <Link href="/book" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Book Details</Link>
+            <Link href="/shop" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Cart</Link>
+            <Link href="/emergency-printing" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Printing Service</Link>
+            <Link href="/shop" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Order Flow</Link>
+            <Link href="/refund" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Refunds</Link>
           </div>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-brand-600">Follow us on Facebook</a>
-            <a href="#" className="hover:text-brand-600">Follow us on Instagram</a>
+            <a href="#" className="hover:text-brand-600 font-bold transition-colors">Follow us on Facebook</a>
+            <a href="#" className="hover:text-brand-600 font-bold transition-colors">Follow us on Instagram</a>
           </div>
         </div>
       </div>
@@ -50,20 +52,24 @@ export default function Navbar() {
           </Link>
 
           {/* Search - centered between logo and right icons */}
-          <div className="hidden md:flex flex-1 mx-4 items-center border border-gray-200 rounded-full px-4 py-2 bg-gray-50">
+          <motion.div
+            initial={false}
+            animate={{ flex: searchValue ? 1.5 : 1 }}
+            className="hidden md:flex flex-1 mx-4 items-center border border-gray-200 rounded-full px-4 py-2 bg-white/50 backdrop-blur-sm focus-within:bg-white focus-within:shadow-md transition-all duration-300"
+          >
             <input
               type="text"
               placeholder="Search books by title, category, author..."
-              className="flex-1 bg-transparent text-sm outline-none text-gray-600 min-w-0"
+              className="flex-1 bg-transparent text-sm outline-none text-gray-800 font-medium min-w-0 placeholder:text-gray-500"
               value={searchValue}
               onChange={e => setSearchValue(e.target.value)}
             />
-            <button className="ml-2 text-gray-400 hover:text-brand-600 shrink-0">
+            <button className="ml-2 text-gray-400 hover:text-brand-600 shrink-0 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
-          </div>
+          </motion.div>
 
           {/* Right side: Location + Profile + Cart */}
           <div className="flex items-center gap-4 ml-auto shrink-0">
@@ -80,11 +86,11 @@ export default function Navbar() {
             <div className="hidden lg:block w-px h-6 bg-gray-200" />
 
             {/* Profile */}
-            <button className="text-gray-600 hover:text-brand-600">
+            <Link href="/dashboard" className="text-gray-600 hover:text-brand-600">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-            </button>
+            </Link>
 
             {/* Cart */}
             <Link href="/shop" className="text-gray-600 hover:text-brand-600 relative block">
@@ -114,21 +120,22 @@ export default function Navbar() {
       </div>
 
       {/* Category nav - Desktop: always visible & evenly spaced, Mobile: toggled */}
-      <nav className={`border-t border-gray-100 bg-white ${mobileMenuOpen ? 'block' : 'hidden'} md:block`}>
+      <nav className={`border-t border-gray-100 bg-[#A7E6FF] ${mobileMenuOpen ? 'block' : 'hidden'} md:block transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto px-4">
           <ul className="flex flex-col md:flex-row md:items-center md:justify-between text-sm">
-            {['Books', 'Audiobooks', 'Toys', 'Movies', 'Games', 'Coffee', 'Others', 'Gifts & Deals', '...'].map((item, i) => (
-              <li key={i} className="md:flex-1 md:text-center">
-                <a
-                  href="#"
-                  className={`block px-3 py-3 whitespace-nowrap font-medium transition-colors ${item === 'Gifts & Deals'
-                    ? 'text-brand-600 border-b-2 border-brand-600'
+            {['Books', 'Audiobooks', 'Toys', 'Movies', 'Games', 'Coffee', 'Others', 'Gifts & Deals', 'Refund'].map((item, i) => (
+              <li key={i} className="md:flex-1 md:text-center group">
+                <Link
+                  href={item === 'Books' ? '/categories' : item === 'Refund' ? '/refund' : '#'}
+                  className={`relative block px-3 py-3 whitespace-nowrap font-medium transition-all duration-300 ${item === 'Gifts & Deals'
+                    ? 'text-brand-600'
                     : 'text-gray-700 hover:text-brand-600'
                     }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item}
-                </a>
+                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-brand-600 transition-all duration-300 group-hover:w-full ${item === 'Gifts & Deals' ? 'w-full' : ''}`} />
+                </Link>
               </li>
             ))}
           </ul>

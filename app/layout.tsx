@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import LayoutClientWrapper from '@/components/LayoutClientWrapper';
 
 export const metadata: Metadata = {
   title: 'BookBuyBD - Your Trusted Online Bookstore in Dhaka',
@@ -21,20 +22,15 @@ export const metadata: Metadata = {
   },
 };
 
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="font-sans" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <Navbar />
-        {children}
-        <Footer />
+    <html lang="en" className="font-sans">
+      <body>
+        <LayoutClientWrapper>{children}</LayoutClientWrapper>
       </body>
     </html>
   );
