@@ -3800,9 +3800,9 @@ function AddBookModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto p-2 sm:p-4">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-            <form onSubmit={submit} className={`relative w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden ${bg}`} style={{ animation: 'fadeUp 0.3s ease' }}>
+            <form onSubmit={submit} className={`relative mx-auto my-2 sm:my-4 w-full max-w-lg max-h-[calc(100vh-1rem)] sm:max-h-[90vh] rounded-2xl border shadow-2xl overflow-hidden flex flex-col ${bg}`} style={{ animation: 'fadeUp 0.3s ease' }}>
                 <div className={`flex items-center justify-between px-5 py-4 border-b ${sec}`}>
                     <div className="flex items-center gap-2">
                         <span className="text-blue-500">{Ico.book}</span>
@@ -3810,14 +3810,14 @@ function AddBookModal({
                     </div>
                     <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">{Ico.x}</button>
                 </div>
-                <div className="p-5 space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="col-span-2">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="sm:col-span-2">
                             <label className={`block text-[11px] font-semibold mb-1.5 ${lbl}`}>Title</label>
                             <input value={form.title} onChange={(e) => updateText('title', e.target.value)} placeholder="Book title"
                                 className={`w-full text-xs px-3 py-2.5 rounded-xl border outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition ${inp}`} />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
                             <label className={`block text-[11px] font-semibold mb-1.5 ${lbl}`}>Slug (optional)</label>
                             <input value={form.slug} onChange={(e) => updateText('slug', e.target.value)} placeholder="sample-book"
                                 className={`w-full text-xs px-3 py-2.5 rounded-xl border outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition ${inp}`} />
@@ -3864,7 +3864,7 @@ function AddBookModal({
                                 />
                             )}
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
                             <label className={`block text-[11px] font-semibold mb-1.5 ${lbl}`}>Description</label>
                             <textarea rows={3} value={form.description} onChange={(e) => updateText('description', e.target.value)} placeholder="A practical guide to building good habits."
                                 className={`w-full text-xs px-3 py-2.5 rounded-xl border outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition resize-none ${inp}`} />
@@ -3910,7 +3910,7 @@ function AddBookModal({
                     </div>
                     {error && <p className="text-[11px] font-semibold text-red-500">{error}</p>}
                 </div>
-                <div className={`px-5 py-4 border-t flex items-center justify-end gap-2 ${sec}`}>
+                <div className={`px-4 sm:px-5 py-4 border-t flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end ${sec}`}>
                     <button type="button" onClick={onClose} disabled={submitting} className={`text-xs font-semibold px-4 py-2.5 rounded-xl border transition ${dark ? 'border-gray-700 text-gray-400 hover:bg-gray-800' : 'border-gray-200 text-gray-500 hover:bg-gray-50'} ${submitting ? 'opacity-60 cursor-not-allowed' : ''}`}>Cancel</button>
                     <button type="submit" disabled={submitting} className={`text-xs font-bold text-white bg-blue-600 px-5 py-2.5 rounded-xl hover:bg-blue-700 transition ${submitting ? 'opacity-70 cursor-not-allowed' : ''}`}>{submitting ? 'Creating...' : 'Create Book'}</button>
                 </div>

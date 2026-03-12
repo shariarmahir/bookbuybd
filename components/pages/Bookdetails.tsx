@@ -14,12 +14,17 @@ import {
 } from './cartStore';
 import type { CartItemVariant } from './cartStore';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || '/api';
 const BACKEND_ORIGIN = (() => {
+  const explicitOrigin = process.env.NEXT_PUBLIC_BACKEND_ORIGIN?.trim();
+  if (explicitOrigin) {
+    return explicitOrigin.replace(/\/$/, '');
+  }
+
   try {
-    return API_BASE_URL ? new URL(API_BASE_URL).origin : 'http://127.0.0.1:8000';
+    return API_BASE_URL ? new URL(API_BASE_URL).origin.replace(/\/$/, '') : '';
   } catch {
-    return 'http://127.0.0.1:8000';
+    return '';
   }
 })();
 
@@ -29,7 +34,11 @@ function resolveMediaSrc(path?: string | null): string {
     return path;
   }
 
-  return path.startsWith('/') ? `${BACKEND_ORIGIN}${path}` : `${BACKEND_ORIGIN}/${path}`;
+  if (path.startsWith('/')) {
+    return BACKEND_ORIGIN ? `${BACKEND_ORIGIN}${path}` : path;
+  }
+
+  return BACKEND_ORIGIN ? `${BACKEND_ORIGIN}/${path}` : `/${path}`;
 }
 
 function formatPrice(price: string): string {

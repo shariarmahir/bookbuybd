@@ -5,12 +5,17 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { ApiError, apiClient, endpoints } from '@/lib/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || '/api';
 const BACKEND_ORIGIN = (() => {
+  const explicitOrigin = process.env.NEXT_PUBLIC_BACKEND_ORIGIN?.trim();
+  if (explicitOrigin) {
+    return explicitOrigin.replace(/\/$/, '');
+  }
+
   try {
-    return API_BASE_URL ? new URL(API_BASE_URL).origin : 'http://127.0.0.1:8000';
+    return API_BASE_URL ? new URL(API_BASE_URL).origin.replace(/\/$/, '') : '';
   } catch {
-    return 'http://127.0.0.1:8000';
+    return '';
   }
 })();
 
@@ -58,7 +63,11 @@ function resolveImageSrc(image: string): string {
   if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:') || image.startsWith('blob:')) {
     return image;
   }
-  return image.startsWith('/') ? `${BACKEND_ORIGIN}${image}` : `${BACKEND_ORIGIN}/${image}`;
+  if (image.startsWith('/')) {
+    return BACKEND_ORIGIN ? `${BACKEND_ORIGIN}${image}` : image;
+  }
+
+  return BACKEND_ORIGIN ? `${BACKEND_ORIGIN}/${image}` : `/${image}`;
 }
 
 function formatPrice(value: string): string {
