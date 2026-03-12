@@ -230,7 +230,7 @@ export default function Footer() {
             </p>
             <div className="flex gap-3">
               <motion.a
-                href="https://facebook.com"
+                href="https://www.facebook.com/BookBuyBD5"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.2, backgroundColor: 'rgba(255,255,255,0.2)' }}
@@ -239,7 +239,7 @@ export default function Footer() {
                 <Facebook className="w-5 h-5" />
               </motion.a>
               <motion.a
-                href="https://instagram.com"
+                href="#"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.2, backgroundColor: 'rgba(255,255,255,0.2)' }}
@@ -248,7 +248,7 @@ export default function Footer() {
                 <Instagram className="w-5 h-5" />
               </motion.a>
               <motion.a
-                href="https://youtube.com"
+                href="#"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.2, backgroundColor: 'rgba(255,255,255,0.2)' }}
@@ -361,7 +361,7 @@ export default function Footer() {
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>+880 1712-345678</span>
+                <span>+880 1601-007703</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />

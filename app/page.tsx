@@ -5,6 +5,7 @@ import BooksGrid from '@/components/sections/BooksGrid';
 import Testimonials from '@/components/sections/Testimonials';
 import Contact from '@/components/sections/Contact';
 import BooksNoSSR from '@/components/sections/BooksNoSSR';
+import PrintingHub from '@/components/sections/PrintingHub';
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
       <Suspense fallback={<div className="py-8 text-center text-sm text-gray-400">Loading books...</div>}>
         <BooksNoSSR />
       </Suspense>
+      <PrintingHub/>
       <Testimonials />
       <Contact />
     </main>

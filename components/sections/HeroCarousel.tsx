@@ -42,12 +42,17 @@ const FICTION_CATEGORY_SLUG = 'fiction';
 const FICTION_STORIES_PER_SLIDE = 4;
 const FICTION_ROTATE_MS = 3500;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || '/api';
 const BACKEND_ORIGIN = (() => {
+  const explicitOrigin = process.env.NEXT_PUBLIC_BACKEND_ORIGIN?.trim();
+  if (explicitOrigin) {
+    return explicitOrigin.replace(/\/$/, '');
+  }
+
   try {
-    return API_BASE_URL ? new URL(API_BASE_URL).origin : 'http://127.0.0.1:8000';
+    return API_BASE_URL ? new URL(API_BASE_URL).origin.replace(/\/$/, '') : '';
   } catch {
-    return 'http://127.0.0.1:8000';
+    return '';
   }
 })();
 
@@ -92,7 +97,10 @@ function resolveImageSrc(image: unknown): string {
   if (trimmed.startsWith('/images/')) {
     return trimmed;
   }
-  return trimmed.startsWith('/') ? `${BACKEND_ORIGIN}${trimmed}` : `${BACKEND_ORIGIN}/${trimmed}`;
+  if (trimmed.startsWith('/')) {
+    return BACKEND_ORIGIN ? `${BACKEND_ORIGIN}${trimmed}` : trimmed;
+  }
+  return BACKEND_ORIGIN ? `${BACKEND_ORIGIN}/${trimmed}` : `/${trimmed}`;
 }
 
 function mapHeroSlides(payload: unknown): HeroSlideViewModel[] {
@@ -689,7 +697,7 @@ export default function HeroCarousel() {
               <Link href="/shop" className="rounded-xl bg-white shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition cursor-pointer border border-gray-100 block">
                 <div className="w-14 aspect-[2/3] bg-red-100 rounded flex-shrink-0 overflow-hidden">
                   <Image
-                    src="/images/books/book1.jpg"
+                    src="/logo.png"
                     alt="Most Read Book"
                     width={56}
                     height={84}

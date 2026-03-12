@@ -1,17 +1,78 @@
 'use client';
-import { type FormEvent, type MouseEvent, useEffect, useState } from 'react';
+import { type FormEvent, type MouseEvent, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CART_UPDATED_EVENT, getStoredCartItems } from '@/components/pages/cartStore';
+import { booksService } from '@/lib/api';
+
+interface NavCategory {
+  name: string;
+  slug: string;
+}
+
+function slugifyCategory(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function getListPayload(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) return payload;
+  if (!isRecord(payload)) return [];
+  if (Array.isArray(payload.results)) return payload.results;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
+}
+
+function toTrimmedString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function extractCategories(payload: unknown): NavCategory[] {
+  const list = getListPayload(payload);
+  const unique = new Map<string, NavCategory>();
+
+  list.forEach((item) => {
+    if (typeof item === 'string') {
+      const name = item.trim();
+      const slug = slugifyCategory(name);
+      if (!name || !slug || unique.has(slug)) return;
+      unique.set(slug, { name, slug });
+      return;
+    }
+
+    if (!isRecord(item)) return;
+
+    const name = toTrimmedString(item.name) || toTrimmedString(item.title);
+    const rawSlug = toTrimmedString(item.slug);
+    const slug = slugifyCategory(rawSlug || name);
+    if (!name || !slug || unique.has(slug)) return;
+    unique.set(slug, { name, slug });
+  });
+
+  return Array.from(unique.values());
+}
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchQueryParam = searchParams.get('search')?.trim() ?? '';
+  const activeGenreSlug = slugifyCategory(pathname === '/categories' ? searchParams.get('genre')?.trim() ?? '' : '');
   const [cartQty, setCartQty] = useState(0);
+  const [categories, setCategories] = useState<NavCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const categoryTrackRef = useRef<HTMLDivElement | null>(null);
+  const [desktopCarousel, setDesktopCarousel] = useState(false);
 
   useEffect(() => {
     const syncCartQty = () => {
@@ -37,6 +98,85 @@ export default function Navbar() {
       window.removeEventListener(CART_UPDATED_EVENT, onCartUpdated as EventListener);
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCategories = async () => {
+      setCategoriesLoading(true);
+      try {
+        const payload = await booksService.getAllCategories();
+        if (cancelled) return;
+
+        const nextCategories = extractCategories(payload);
+        setCategories(nextCategories);
+      } catch {
+        if (!cancelled) {
+          setCategories([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setCategoriesLoading(false);
+        }
+      }
+    };
+
+    void loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const media = window.matchMedia('(min-width: 768px)');
+    const apply = () => setDesktopCarousel(media.matches);
+    apply();
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', apply);
+      return () => media.removeEventListener('change', apply);
+    }
+
+    media.addListener(apply);
+    return () => media.removeListener(apply);
+  }, []);
+
+  useEffect(() => {
+    const track = categoryTrackRef.current;
+    if (!track) return;
+
+    const activeChip = track.querySelector<HTMLElement>('[data-active-category="true"]');
+    if (activeChip) {
+      activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [activeGenreSlug, pathname]);
+
+  useEffect(() => {
+    if (!desktopCarousel) return;
+
+    const timer = window.setInterval(() => {
+      const track = categoryTrackRef.current;
+      if (!track) return;
+
+      if (track.scrollWidth <= track.clientWidth + 2) return;
+
+      const maxScrollLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+      const isAtEnd = track.scrollLeft >= maxScrollLeft - 2;
+
+      if (isAtEnd) {
+        track.scrollTo({ left: 0, behavior: 'smooth' });
+        return;
+      }
+
+      const distance = Math.max(180, Math.floor(track.clientWidth * 0.72));
+      track.scrollBy({ left: distance, behavior: 'smooth' });
+    }, 3200);
+
+    return () => window.clearInterval(timer);
+  }, [desktopCarousel, categories.length]);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,7 +220,7 @@ export default function Navbar() {
             <Link href="/shop" className="hover:text-brand-600 font-bold transition-all hover:translate-y-[-1px]">Order Flow</Link>
           </div>
           <div className="hidden gap-4 lg:flex">
-            <a href="#" className="hover:text-brand-600 font-bold transition-colors">Follow us on Facebook</a>
+            <a href="https://www.facebook.com/BookBuyBD5" className="hover:text-brand-600 font-bold transition-colors">Follow us on Facebook</a>
             <a href="#" className="hover:text-brand-600 font-bold transition-colors">Follow us on Instagram</a>
           </div>
         </div>
@@ -160,6 +300,51 @@ export default function Navbar() {
             </svg>
           </button>
         </form>
+      </div>
+
+      <div className="border-t border-white/30 bg-[#A7E6FF]">
+        <div className="relative mx-auto max-w-7xl px-4 py-2">
+          <div
+            ref={categoryTrackRef}
+            className="flex snap-x snap-mandatory flex-nowrap items-center gap-2 overflow-x-auto scroll-smooth px-0 scrollbar-hide md:overflow-x-hidden md:px-10"
+          >
+            <Link
+              href="/categories"
+              data-active-category={pathname === '/categories' && !activeGenreSlug ? 'true' : 'false'}
+              className={`shrink-0 snap-start rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors sm:text-xs ${
+                pathname === '/categories' && !activeGenreSlug
+                  ? 'border-brand-600 bg-brand-500 text-white'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-brand-500 hover:text-brand-600'
+              }`}
+            >
+              All
+            </Link>
+
+            {categories.map((category) => {
+              const isActive = pathname === '/categories' && activeGenreSlug === category.slug;
+              return (
+                <Link
+                  key={category.slug}
+                  href={`/categories?genre=${encodeURIComponent(category.slug)}`}
+                  data-active-category={isActive ? 'true' : 'false'}
+                  className={`shrink-0 snap-start rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors sm:text-xs ${
+                    isActive
+                      ? 'border-brand-600 bg-brand-500 text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-brand-500 hover:text-brand-600'
+                  }`}
+                >
+                  {category.name}
+                </Link>
+              );
+            })}
+
+            {!categoriesLoading && categories.length === 0 && (
+              <span className="shrink-0 text-xs text-gray-500">
+                No categories found
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
     </header>

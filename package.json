@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build",
+    "build:cpanel": "next build && node scripts/prepare-cpanel.mjs",
     "start": "next start",
+    "start:cpanel": "node .next/standalone/server.js",
     "lint": "eslint"
   },
   "dependencies": {

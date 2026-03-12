@@ -13,6 +13,7 @@ import type {
 import { endpoints } from '@/lib/api/endpoints';
 
 const MAX_SEARCH_PAGES = 40;
+const MAX_CATEGORY_PAGES = 40;
 
 interface SearchPageEnvelope {
   count?: unknown;
@@ -27,6 +28,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isSearchPageEnvelope(value: unknown): value is SearchPageEnvelope {
   return isRecord(value) && Array.isArray(value.results);
+}
+
+function extractListPayload(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) return payload;
+  if (!isRecord(payload)) return [];
+  if (Array.isArray(payload.results)) return payload.results;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
 }
 
 function slugifyCategory(value: string): string {
@@ -129,6 +139,32 @@ async function fetchAllSearchCatalogPages(search: string): Promise<unknown> {
   };
 }
 
+async function fetchAllCategories(): Promise<unknown> {
+  const rows: unknown[] = [];
+  let page = 1;
+
+  for (let pageIndex = 0; pageIndex < MAX_CATEGORY_PAGES; pageIndex += 1) {
+    const payload = await apiClient.get<unknown>(endpoints.books.categories, {
+      query: { page },
+    });
+
+    const items = extractListPayload(payload);
+    rows.push(...items);
+
+    if (!isRecord(payload) || !('next' in payload)) {
+      break;
+    }
+
+    const nextPage = parseNextPageNumber(payload.next);
+    if (nextPage === null || nextPage <= page) {
+      break;
+    }
+    page = nextPage;
+  }
+
+  return rows;
+}
+
 function normalizeBestSellingLimit(limit?: number): number | undefined {
   if (typeof limit !== 'number' || Number.isNaN(limit)) return undefined;
   return Math.max(1, Math.min(100, Math.floor(limit)));
@@ -173,6 +209,10 @@ export const booksService = {
 
   getCategories() {
     return apiClient.get<unknown>(endpoints.books.categories);
+  },
+
+  getAllCategories() {
+    return fetchAllCategories();
   },
 
   getAuthorOfWeek() {
