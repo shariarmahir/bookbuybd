@@ -1,5 +1,4 @@
 import type { BookListItem } from '@/lib/api/contracts/books';
-import type { PrintingCategory } from '@/lib/api/contracts/printing';
 
 export interface HeroSlide {
   id: string;
@@ -47,8 +46,6 @@ export interface HomeSummary {
   comingSoon: BookListItem[];
   genreHighlights: GenreHighlight[];
   testimonials: Testimonial[];
-  printingCategories: PrintingCategory[];
   contactInfo?: ContactInfo;
   updatedAt: string;
 }
-

@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -14,7 +15,11 @@ export default function LayoutClientWrapper({
 
     return (
         <>
-            {!isDashboard && <Navbar />}
+            {!isDashboard && (
+                <Suspense fallback={null}>
+                    <Navbar />
+                </Suspense>
+            )}
             {children}
             {!isDashboard && <Footer />}
         </>

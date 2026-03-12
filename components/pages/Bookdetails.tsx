@@ -1,10 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { ApiError, booksService, type BookAuthor, type BookDetailResponse } from '@/lib/api';
-import { addItemToStoredCart } from './cartStore';
+import {
+  addItemToStoredCart,
+  CART_UPDATED_EVENT,
+  getCartQuantityByBookId,
+  getStoredCartItems,
+  removeItemFromStoredCart,
+} from './cartStore';
+import type { CartItemVariant } from './cartStore';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || '';
 const BACKEND_ORIGIN = (() => {
@@ -30,6 +38,74 @@ function formatPrice(price: string): string {
   return `TK ${price}`;
 }
 
+interface BookVariantOption {
+  key: CartItemVariant;
+  label: string;
+  price: string;
+  quality: string;
+  stockQuantity?: number;
+}
+
+function asTrimmedString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : typeof value === 'number' ? String(value) : '';
+}
+
+function toNonNegativeInt(value: unknown): number | undefined {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) return undefined;
+  return Math.trunc(numeric);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function normalizeVariant(value: unknown): CartItemVariant | null {
+  const normalized = asTrimmedString(value).toLowerCase();
+  if (normalized === 'paperback' || normalized === 'hardcover') return normalized;
+  return null;
+}
+
+function readVariantObject(book: BookDetailResponse, key: CartItemVariant): Record<string, unknown> | null {
+  if (!isRecord(book.variants)) return null;
+  const variantObj = book.variants[key];
+  return isRecord(variantObj) ? variantObj : null;
+}
+
+function buildVariantOption(book: BookDetailResponse, key: CartItemVariant): BookVariantOption | null {
+  const variantObj = readVariantObject(book, key);
+  const fallbackPrice = key === 'paperback' ? book.price : '';
+  const topPrice = key === 'paperback' ? book.paperback_price : book.hardcover_price;
+  const price = asTrimmedString(variantObj?.price) || asTrimmedString(topPrice) || asTrimmedString(fallbackPrice);
+  if (!price) return null;
+
+  const topQuality = key === 'paperback' ? book.paperback_quality : book.hardcover_quality;
+  const quality = asTrimmedString(variantObj?.quality) || asTrimmedString(topQuality) || (key === 'paperback' ? 'Standard' : 'Premium');
+
+  return {
+    key,
+    label: key === 'paperback' ? 'Paperback' : 'Hardcover',
+    price,
+    quality,
+    stockQuantity: toNonNegativeInt(variantObj?.stock_quantity),
+  };
+}
+
+function resolveVariantOptions(book: BookDetailResponse): BookVariantOption[] {
+  const paperback = buildVariantOption(book, 'paperback');
+  const hardcover = buildVariantOption(book, 'hardcover');
+  const variants = [paperback, hardcover].filter((item): item is BookVariantOption => item !== null);
+
+  if (variants.length > 0) return variants;
+
+  return [{
+    key: 'paperback',
+    label: 'Paperback',
+    price: asTrimmedString(book.price) || '0.00',
+    quality: 'Standard',
+  }];
+}
+
 function Img({
   src,
   alt = '',
@@ -45,7 +121,19 @@ function Img({
 }) {
   const [errored, setErrored] = useState(false);
   if (!src || errored) return <div className={className} style={{ ...style, background: fallback }} />;
-  return <img src={src} alt={alt} className={className} style={style} onError={() => setErrored(true)} />;
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={700}
+      height={1000}
+      unoptimized
+      loader={({ src: imageSrc }) => imageSrc}
+      className={className}
+      style={style}
+      onError={() => setErrored(true)}
+    />
+  );
 }
 
 function Stars({ count, total = 5 }: { count: number; total?: number }) {
@@ -81,7 +169,6 @@ function DetailState({
 }
 
 export default function BookDetails() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const slug = useMemo(() => searchParams.get('slug')?.trim() ?? '', [searchParams]);
 
@@ -91,6 +178,9 @@ export default function BookDetails() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [reservedQty, setReservedQty] = useState(0);
+  const [reservedTotalQty, setReservedTotalQty] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState<CartItemVariant>('paperback');
   const [descExpanded, setDescExpanded] = useState(false);
 
   useEffect(() => {
@@ -185,6 +275,49 @@ export default function BookDetails() {
     };
   }, [authorSlug, book]);
 
+  useEffect(() => {
+    if (!book) {
+      setSelectedVariant('paperback');
+      return;
+    }
+
+    const options = resolveVariantOptions(book);
+    const defaultVariant = normalizeVariant(book.default_variant);
+    if (defaultVariant && options.some((option) => option.key === defaultVariant)) {
+      setSelectedVariant(defaultVariant);
+      return;
+    }
+
+    setSelectedVariant(options[0]?.key ?? 'paperback');
+  }, [book]);
+
+  useEffect(() => {
+    const syncAddedState = () => {
+      if (!book?.id) {
+        setAdded(false);
+        setReservedQty(0);
+        setReservedTotalQty(0);
+        return;
+      }
+
+      const items = getStoredCartItems();
+      const qtyForVariant = getCartQuantityByBookId(book.id, items, selectedVariant);
+      const totalQty = getCartQuantityByBookId(book.id, items);
+      setAdded(qtyForVariant > 0);
+      setReservedQty(qtyForVariant);
+      setReservedTotalQty(totalQty);
+    };
+
+    syncAddedState();
+    window.addEventListener('storage', syncAddedState);
+    window.addEventListener(CART_UPDATED_EVENT, syncAddedState as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', syncAddedState);
+      window.removeEventListener(CART_UPDATED_EVENT, syncAddedState as EventListener);
+    };
+  }, [book?.id, selectedVariant]);
+
   if (!slug) {
     return (
       <div className="bd-root min-h-screen bg-slate-50">
@@ -196,11 +329,11 @@ export default function BookDetails() {
   if (loading) {
     return (
       <div className="bd-root min-h-screen bg-slate-50">
-        <div className="max-w-4xl mx-auto px-5 py-12 animate-pulse">
+        <div className="mx-auto max-w-4xl animate-pulse px-4 py-8 sm:px-5 sm:py-12">
           <div className="h-4 w-20 rounded bg-slate-200" />
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
-            <div className="flex gap-6">
-              <div className="h-56 w-40 rounded-xl bg-slate-200" />
+            <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
+              <div className="h-56 w-36 rounded-xl bg-slate-200 sm:w-40" />
               <div className="flex-1 space-y-3">
                 <div className="h-6 w-4/5 rounded bg-slate-200" />
                 <div className="h-4 w-2/5 rounded bg-slate-200" />
@@ -241,6 +374,15 @@ export default function BookDetails() {
   const categoryName = book.category?.name || 'Uncategorized';
   const shortDescription = book.description?.slice(0, 320);
   const hasLongDescription = (book.description?.length || 0) > 320;
+  const variantOptions = resolveVariantOptions(book);
+  const activeVariant = variantOptions.find((option) => option.key === selectedVariant) ?? variantOptions[0];
+  const variantPrice = activeVariant?.price || book.price;
+  const variantQuality = activeVariant?.quality || 'Standard';
+  const variantLabel = activeVariant?.label || 'Paperback';
+  const variantStock = activeVariant?.stockQuantity;
+  const reservedForStock = typeof variantStock === 'number' ? reservedQty : reservedTotalQty;
+  const effectiveStock = Math.max(0, (variantStock ?? book.stock_quantity) - reservedForStock);
+  const isEffectivelyInStock = effectiveStock > 0;
 
   return (
     <>
@@ -295,7 +437,7 @@ export default function BookDetails() {
       `}</style>
 
       <div className="bd-root min-h-screen bg-slate-50">
-        <main className="mx-auto max-w-4xl px-5 py-7">
+        <main className="mx-auto max-w-4xl px-4 py-6 sm:px-5 sm:py-7">
           <button
             className="mb-6 flex items-center gap-1.5 text-sm font-semibold text-slate-500 transition-colors hover:text-blue-600"
             style={{ background: 'none', border: 'none', cursor: 'pointer' }}
@@ -309,35 +451,62 @@ export default function BookDetails() {
             Back
           </button>
 
-          <div className="info-card bd-a1 mb-6 flex gap-7">
-            <div className="flex-shrink-0 overflow-hidden rounded-xl shadow-lg" style={{ width: 155, height: 220 }}>
+          <div className="info-card bd-a1 mb-6 flex flex-col gap-5 sm:flex-row sm:gap-7">
+            <div className="aspect-[155/220] w-full max-w-[155px] flex-shrink-0 overflow-hidden rounded-xl shadow-lg">
               <Img src={coverSrc} alt={book.title} className="h-full w-full object-cover" fallback="#1d4ed8" />
             </div>
 
             <div className="min-w-0 flex-1">
-              <h1 className="text-[22px] font-bold leading-tight text-slate-900">{book.title}</h1>
+              <h1 className="text-xl font-bold leading-tight text-slate-900 sm:text-[22px]">{book.title}</h1>
               <p className="mt-1 text-[13px] text-slate-500">
                 By <span className="font-semibold text-blue-600">{authorName}</span>
               </p>
 
               <div className="mt-2 flex items-center gap-2">
-                <Stars count={book.is_in_stock ? 5 : 3} />
-                <span className="text-xs text-slate-400">Stock: {book.stock_quantity}</span>
+                <Stars count={isEffectivelyInStock ? 5 : 3} />
+                <span className="text-xs text-slate-400">Stock: {effectiveStock}</span>
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className="tag-chip">{categoryName}</span>
-                <span className="tag-chip">{book.is_in_stock ? 'In Stock' : 'Out of Stock'}</span>
+                <span className="tag-chip">{isEffectivelyInStock ? 'In Stock' : 'Out of Stock'}</span>
                 {book.is_coming_soon && <span className="tag-chip">Coming Soon</span>}
                 {!book.is_active && <span className="tag-chip">Inactive</span>}
               </div>
 
-              <p className="mt-4 text-[14px] font-bold text-slate-900">{formatPrice(book.price)}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {variantOptions.map((variant) => {
+                  const selected = variant.key === selectedVariant;
+                  return (
+                    <button
+                      key={variant.key}
+                      type="button"
+                      onClick={() => setSelectedVariant(variant.key)}
+                      className={`act-btn ${selected ? 'on' : ''}`}
+                    >
+                      <span>{variant.label}</span>
+                      <span className="font-bold">{formatPrice(variant.price)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="mt-3 text-[14px] font-bold text-slate-900">
+                {formatPrice(variantPrice)} <span className="text-slate-500 text-xs">({variantQuality})</span>
+              </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={() => {
-                    const parsedPrice = Number(book.price);
+                    if (added) {
+                      removeItemFromStoredCart(book.id, selectedVariant);
+                      setAdded(false);
+                      setReservedQty(0);
+                      return;
+                    }
+                    if (!isEffectivelyInStock) return;
+
+                    const parsedPrice = Number(variantPrice);
                     const safePrice = Number.isFinite(parsedPrice) && parsedPrice >= 0 ? parsedPrice : 0;
 
                     addItemToStoredCart({
@@ -348,31 +517,35 @@ export default function BookDetails() {
                       coverFallback: '#1d4ed8',
                       price: safePrice,
                       qty: 1,
-                      edition: categoryName,
+                      edition: `${categoryName} · ${variantLabel}`,
+                      variant: selectedVariant,
+                      quality: variantQuality,
+                      stockQuantity: variantStock ?? book.stock_quantity,
                     });
 
                     setAdded(true);
-                    setTimeout(() => setAdded(false), 2000);
-                    router.push('/shop');
                   }}
                   className="shop-btn"
-                  style={added ? { background: '#10b981', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' } : {}}
+                  disabled={!added && !isEffectivelyInStock}
+                  style={
+                    added
+                      ? { background: '#10b981', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }
+                      : !isEffectivelyInStock
+                        ? { background: '#9ca3af', boxShadow: 'none', cursor: 'not-allowed' }
+                        : {}
+                  }
                 >
-                  {added ? 'Added to Cart' : 'Add to Cart'}
+                  {added ? `Added ${variantLabel}` : isEffectivelyInStock ? `Add ${variantLabel}` : 'Out of Stock'}
                 </button>
                 <span className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">
-                  Stock: {book.stock_quantity}
+                  {variantLabel} stock: {effectiveStock}
                 </span>
-
-                <Link href="/shop" className="flex h-[40px] items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 text-sm font-bold text-gray-700 shadow-sm transition hover:border-brand-500 hover:text-brand-600">
-                  Shop Now
-                </Link>
               </div>
             </div>
           </div>
 
-          <div className="bd-a2 flex gap-5">
-            <div className="w-52 flex-shrink-0">
+          <div className="bd-a2 flex flex-col gap-5 lg:flex-row">
+            <div className="w-full flex-shrink-0 lg:w-52">
               <div className="info-card">
                 <p className="mb-3 text-sm font-bold text-slate-900">About the Author</p>
                 <div className="mb-3 flex items-center gap-2.5">

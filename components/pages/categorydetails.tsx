@@ -1,8 +1,7 @@
 'use client';
 
-import Books from '@/components/sections/Books';
+import BooksNoSSR from '@/components/sections/BooksNoSSR';
 
 export default function CategoryDetails() {
-  return <Books />;
+  return <BooksNoSSR />;
 }
-

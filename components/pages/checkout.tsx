@@ -1,11 +1,32 @@
 'use client';
 import { useState } from 'react';
-import { CartItem, CheckoutForm, EMPTY_FORM, DISTRICTS, DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from './cartStore';
+import Image from 'next/image';
+import {
+  CartItem,
+  CheckoutForm,
+  DEFAULT_DELIVERY_SETTINGS,
+  DISTRICTS,
+  DeliverySettings,
+  EMPTY_FORM,
+  calculateDeliveryCharge,
+  getCartItemKey,
+} from './cartStore';
 
 function Img({ src, alt = '', className = '', fallback = '#e2e8f0' }: { src: string; alt?: string; className?: string; fallback?: string }) {
   const [err, setErr] = useState(false);
   if (err) return <div className={className} style={{ background: fallback }} />;
-  return <img src={src} alt={alt} className={className} onError={() => setErr(true)} />;
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={600}
+      height={900}
+      unoptimized
+      loader={({ src: imageSrc }) => imageSrc}
+      className={className}
+      onError={() => setErr(true)}
+    />
+  );
 }
 
 interface CheckoutProps {
@@ -16,6 +37,7 @@ interface CheckoutProps {
   initialForm?: CheckoutForm;
   isSubmitting?: boolean;
   submitError?: string | null;
+  deliverySettings?: DeliverySettings;
 }
 
 type Step = 'form' | 'review';
@@ -41,6 +63,7 @@ export default function Checkout({
   initialForm = EMPTY_FORM,
   isSubmitting = false,
   submitError = null,
+  deliverySettings = DEFAULT_DELIVERY_SETTINGS,
 }: CheckoutProps) {
   const [step, setStep] = useState<Step>('form');
   const [form, setForm] = useState<CheckoutForm>(initialForm);
@@ -48,7 +71,7 @@ export default function Checkout({
   const [touched, setTouched] = useState<Set<string>>(new Set());
 
   const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0);
-  const delivery = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
+  const delivery = calculateDeliveryCharge(subtotal, deliverySettings);
   const total = subtotal + delivery;
   const totalItems = items.reduce((s, it) => s + it.qty, 0);
 
@@ -85,7 +108,7 @@ export default function Checkout({
       `}</style>
 
       <div className="ck-root">
-        <div className="max-w-6xl mx-auto px-4 py-10">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10">
 
           {/* ── Header with Step Indicator ── */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-10 fade-up">
@@ -99,13 +122,13 @@ export default function Checkout({
                 </svg>
               </button>
               <div>
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight">Checkout</h1>
+                <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">Checkout</h1>
                 <p className="text-sm text-gray-400 font-semibold mt-0.5">{totalItems} item{totalItems !== 1 ? 's' : ''} · ৳{total.toLocaleString()}</p>
               </div>
             </div>
 
             {/* Visual 2-Step Indicator */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
               {(['form', 'review'] as Step[]).map((s, i) => {
                 const isActive = step === s;
                 const isPast = step === 'review' && s === 'form';
@@ -122,10 +145,10 @@ export default function Checkout({
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                         ) : icons[s]}
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors duration-500 ${isActive ? 'text-gray-900' : isPast ? 'text-blue-600' : 'text-gray-300'}`}>{labels[s]}</span>
+                      <span className={`hidden text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors duration-500 sm:block ${isActive ? 'text-gray-900' : isPast ? 'text-blue-600' : 'text-gray-300'}`}>{labels[s]}</span>
                     </div>
                     {i === 0 && (
-                      <div className="w-16 h-0.5 mb-5 rounded-full transition-all duration-700" style={{ background: step === 'review' ? '#3b82f6' : '#e5e7eb' }} />
+                      <div className="mb-0 h-0.5 w-10 rounded-full transition-all duration-700 sm:mb-5 sm:w-16" style={{ background: step === 'review' ? '#3b82f6' : '#e5e7eb' }} />
                     )}
                   </div>
                 );
@@ -133,7 +156,7 @@ export default function Checkout({
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
 
             {/* ── LEFT: Form or Review ── */}
             <div className="flex-1 min-w-0">
@@ -142,7 +165,7 @@ export default function Checkout({
                 <div className="flex flex-col gap-6 fade-up">
 
                   {/* Delivery Info Card */}
-                  <div className="bg-white rounded-[2rem] p-8 border border-gray-50 shadow-xl shadow-gray-100/20">
+                  <div className="rounded-[2rem] border border-gray-50 bg-white p-5 shadow-xl shadow-gray-100/20 sm:p-8">
                     <div className="flex items-center gap-3 mb-8">
                       <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -195,14 +218,14 @@ export default function Checkout({
                   </div>
 
                   {/* Payment Card */}
-                  <div className="bg-white rounded-[2rem] p-8 border border-gray-50 shadow-xl shadow-gray-100/20">
+                  <div className="rounded-[2rem] border border-gray-50 bg-white p-5 shadow-xl shadow-gray-100/20 sm:p-8">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                       </div>
                       <h2 className="text-xl font-black text-gray-900 tracking-tight">Payment Method</h2>
                     </div>
-                    <div className="p-6 rounded-2xl border-2 border-blue-400 bg-blue-50/50 flex items-center gap-5">
+                    <div className="flex flex-col gap-4 rounded-2xl border-2 border-blue-400 bg-blue-50/50 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
                       <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                       </div>
@@ -215,7 +238,7 @@ export default function Checkout({
                   </div>
 
                   {/* Customer Note Card */}
-                  <div className="bg-white rounded-[2rem] p-8 border border-gray-50 shadow-xl shadow-gray-100/20">
+                  <div className="rounded-[2rem] border border-gray-50 bg-white p-5 shadow-xl shadow-gray-100/20 sm:p-8">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
@@ -254,8 +277,8 @@ export default function Checkout({
                 <div className="flex flex-col gap-6 fade-up">
 
                   {/* Delivery Details Review */}
-                  <div className="bg-white rounded-[2rem] p-8 border border-gray-50 shadow-xl shadow-gray-100/20">
-                    <div className="flex items-center justify-between mb-8">
+                  <div className="rounded-[2rem] border border-gray-50 bg-white p-5 shadow-xl shadow-gray-100/20 sm:p-8">
+                    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -301,7 +324,7 @@ export default function Checkout({
                   </div>
 
                   {/* Payment Review */}
-                  <div className="bg-white rounded-[2rem] p-8 border border-gray-50 shadow-xl shadow-gray-100/20">
+                    <div className="rounded-[2rem] border border-gray-50 bg-white p-5 shadow-xl shadow-gray-100/20 sm:p-8">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
@@ -322,7 +345,7 @@ export default function Checkout({
 
                   {/* Customer Note review */}
                   {form.note.trim() && (
-                    <div className="bg-amber-50 rounded-[2rem] p-8 border border-amber-100 shadow-xl shadow-amber-100/20">
+                    <div className="rounded-[2rem] border border-amber-100 bg-amber-50 p-5 shadow-xl shadow-amber-100/20 sm:p-8">
                       <div className="flex items-center gap-3 mb-5">
                         <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
@@ -360,8 +383,8 @@ export default function Checkout({
             </div>
 
             {/* ── RIGHT: Sticky Order Summary ── */}
-            <div className="w-full lg:w-[320px] flex-shrink-0 fade-up-2">
-              <div className="bg-gray-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-gray-900/30 sticky top-6 relative overflow-hidden">
+            <div className="fade-up-2 w-full flex-shrink-0 lg:w-[320px]">
+              <div className="relative overflow-hidden rounded-[2.5rem] bg-gray-900 p-6 text-white shadow-2xl shadow-gray-900/30 sm:p-8 lg:sticky lg:top-6">
                 <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-600 rounded-full blur-[60px] opacity-25" />
                 <div className="relative z-10">
                   <h2 className="text-lg font-black tracking-tight mb-6">
@@ -371,8 +394,8 @@ export default function Checkout({
                   {/* Items list */}
                   <div className="space-y-4 mb-6">
                     {items.map(item => (
-                      <div key={item.id} className="flex gap-3">
-                        <div className="flex-shrink-0 rounded-xl overflow-hidden shadow-sm" style={{ width: 46, height: 64 }}>
+                      <div key={getCartItemKey(item)} className="flex gap-3">
+                        <div className="h-16 w-11 flex-shrink-0 overflow-hidden rounded-xl shadow-sm">
                           <Img src={item.cover} className="w-full h-full object-cover" fallback={item.coverFallback} />
                         </div>
                         <div className="flex-1 min-w-0">

@@ -1,6 +1,6 @@
 import type { BookListItem } from '@/lib/api/contracts/books';
 import type { GenreHighlight, HomeSummary } from '@/lib/api/contracts/home';
-import { books, categories, heroSlides, printingServices, testimonials } from '@/lib/data';
+import { books, categories, heroSlides, testimonials } from '@/lib/data';
 
 function toBookListItem(book: (typeof books)[number]): BookListItem {
   return {
@@ -65,19 +65,6 @@ export function buildHomeSummaryFallback(): HomeSummary {
       text: item.comment,
       stars: item.rating,
     })),
-    printingCategories: printingServices.map((service) => ({
-      id: service.id,
-      label: service.title,
-      icon: service.icon,
-      items: [
-        {
-          id: `${service.id}-1`,
-          name: service.title,
-          description: service.description,
-          icon: service.icon,
-        },
-      ],
-    })),
     contactInfo: {
       phone: '+880 1712-345678',
       email: 'info@bookbuybd.com',
@@ -86,4 +73,3 @@ export function buildHomeSummaryFallback(): HomeSummary {
     updatedAt: new Date().toISOString(),
   };
 }
-

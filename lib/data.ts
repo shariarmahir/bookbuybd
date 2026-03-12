@@ -270,7 +270,7 @@ export const testimonials: Testimonial[] = [
     name: 'Sadia Islam',
     location: 'Rajshahi',
     rating: 5,
-    comment: 'Custom printing service is amazing! Got my thesis printed beautifully.',
+    comment: 'Book quality is excellent. I received my order quickly and in perfect condition.',
     date: '2024-02-12',
   },
   {
@@ -307,52 +307,7 @@ export const heroSlides = [
   {
     id: '3',
     image: '/images/hero/slide3.jpg',
-    title: 'Custom Printing Services',
-    subtitle: 'Thesis, ID cards, and much more',
-  },
-];
-
-export const printingServices = [
-  {
-    id: '1',
-    title: 'Thesis Printing',
-    description: 'Professional thesis printing with binding',
-    icon: 'FileText',
-    price: 'From 800 TK',
-  },
-  {
-    id: '2',
-    title: 'ID Card Printing',
-    description: 'High-quality PVC ID cards',
-    icon: 'CreditCard',
-    price: 'From 50 TK',
-  },
-  {
-    id: '3',
-    title: 'Visiting Cards',
-    description: 'Premium business cards',
-    icon: 'Contact',
-    price: 'From 300 TK',
-  },
-  {
-    id: '4',
-    title: 'Custom Mugs',
-    description: 'Personalized photo mugs',
-    icon: 'Coffee',
-    price: 'From 400 TK',
-  },
-  {
-    id: '5',
-    title: 'Trophies',
-    description: 'Custom awards and trophies',
-    icon: 'Trophy',
-    price: 'From 1200 TK',
-  },
-  {
-    id: '6',
-    title: 'Banners & Posters',
-    description: 'Large format printing',
-    icon: 'Image',
-    price: 'From 500 TK',
+    title: 'Find Your Next Favorite Book',
+    subtitle: 'From classics to latest releases',
   },
 ];

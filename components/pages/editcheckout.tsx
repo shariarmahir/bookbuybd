@@ -25,13 +25,11 @@ interface EditCheckoutProps {
 export default function EditCheckout({ initial, onSave, onBack }: EditCheckoutProps) {
   const [form,    setForm]    = useState<CheckoutForm>(initial);
   const [errors,  setErrors]  = useState<Errors>({});
-  const [touched, setTouched] = useState<Set<string>>(new Set(Object.keys(initial)));
   const [saved,   setSaved]   = useState(false);
 
   const set = (k: keyof CheckoutForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const val = e.target.value;
     setForm(f => ({ ...f, [k]: val }));
-    setTouched(t => new Set([...t, k]));
     const newErrors = validate({ ...form, [k]: val });
     setErrors(prev => ({ ...prev, [k]: newErrors[k] }));
     setSaved(false);
@@ -40,7 +38,6 @@ export default function EditCheckout({ initial, onSave, onBack }: EditCheckoutPr
   const handleSave = () => {
     const errs = validate(form);
     setErrors(errs);
-    setTouched(new Set(Object.keys(form)));
     if (Object.keys(errs).length === 0) {
       setSaved(true);
       setTimeout(() => onSave(form), 600);

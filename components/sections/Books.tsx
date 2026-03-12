@@ -1,7 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { ApiError, booksService } from '@/lib/api';
+import Image from 'next/image';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ApiError, apiClient, booksService, endpoints } from '@/lib/api';
+import {
+  addItemToStoredCart,
+  CART_UPDATED_EVENT,
+  getCartQuantityByBookId,
+  getStoredCartItems,
+  removeItemFromStoredCart,
+} from '@/components/pages/cartStore';
 
 interface GenreOption {
   name: string;
@@ -90,13 +98,14 @@ interface Book {
   title: string;
   author: string;
   genre: string;
+  price: number;
+  stockQuantity: number;
   rating: number;
   reviews: number;
   likes: number;
   excerpt: string;
   img: string;
   imgFallbackColor: string;
-  likedBy: string;
   likedByImg: string[];
 }
 
@@ -113,12 +122,19 @@ interface SidebarBook {
   img: string;
 }
 
+interface AuthorOfWeekSection {
+  title: string;
+  authors: SidebarAuthor[];
+}
+
 type AuthorLookup = Record<number, string>;
 
 const AUTHOR_COLORS = ['#0d9488', '#2563eb', '#7c3aed', '#b45309', '#be185d', '#047857'];
 const BOOK_FALLBACK_COLORS = ['#e11d48', '#0284c7', '#7c3aed', '#1e293b', '#374151', '#b45309', '#6b7280', '#0d9488'];
 const BOOK_FALLBACK_LIKED_BY = ['/images/avatars/av1.jpg', '/images/avatars/av2.jpg'];
 const SIDEBAR_BOOKS_OF_YEAR_LIMIT = 5;
+const DEFAULT_AUTHOR_OF_WEEK_TITLE = 'Author of the week';
+const MAX_CATALOG_PAGES = 80;
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -215,22 +231,52 @@ function extractAuthorLookupFromPayload(payload: unknown): AuthorLookup {
   return lookup;
 }
 
-function mergeAuthorLookups(base: AuthorLookup, incoming: AuthorLookup): AuthorLookup {
-  const entries = Object.entries(incoming);
-  if (entries.length === 0) return base;
+function extractSidebarAuthor(item: unknown, index: number): SidebarAuthor | null {
+  if (typeof item === 'string') {
+    const name = item.trim();
+    if (!name) return null;
+    return {
+      name,
+      initials: getInitials(name),
+      color: AUTHOR_COLORS[index % AUTHOR_COLORS.length],
+      src: '',
+    };
+  }
 
-  let changed = false;
-  const next: AuthorLookup = { ...base };
+  if (!isRecord(item)) return null;
+  const authorObject = isRecord(item.author) ? item.author : null;
 
-  entries.forEach(([idKey, name]) => {
-    const id = Number(idKey);
-    if (!Number.isFinite(id)) return;
-    if (!name || next[id] === name) return;
-    next[id] = name;
-    changed = true;
-  });
+  const name =
+    typeof item.name === 'string'
+      ? item.name
+      : typeof item.author_name === 'string'
+        ? item.author_name
+        : typeof item.author === 'string'
+          ? item.author
+          : isRecord(item.user) && typeof item.user.name === 'string'
+            ? item.user.name
+            : '';
 
-  return changed ? next : base;
+  if (!name.trim()) return null;
+
+  const src =
+    typeof item.image === 'string'
+      ? item.image
+      : typeof item.avatar === 'string'
+        ? item.avatar
+        : typeof item.photo === 'string'
+          ? item.photo
+          : typeof item.profile_image === 'string'
+            ? item.profile_image
+            : authorObject && typeof authorObject.image === 'string'
+              ? authorObject.image
+              : '';
+  return {
+    name,
+    initials: getInitials(name),
+    color: AUTHOR_COLORS[index % AUTHOR_COLORS.length],
+    src,
+  };
 }
 
 function extractAuthorsFromPayload(payload: unknown): SidebarAuthor[] {
@@ -249,54 +295,24 @@ function extractAuthorsFromPayload(payload: unknown): SidebarAuthor[] {
   }
 
   return list
-    .map((item, index) => {
-      if (typeof item === 'string') {
-        const name = item.trim();
-        if (!name) return null;
-        return {
-          name,
-          initials: getInitials(name),
-          color: AUTHOR_COLORS[index % AUTHOR_COLORS.length],
-          src: '',
-        };
-      }
-
-      if (!isRecord(item)) return null;
-
-      const name =
-        typeof item.name === 'string'
-          ? item.name
-          : typeof item.author_name === 'string'
-            ? item.author_name
-            : typeof item.author === 'string'
-              ? item.author
-              : isRecord(item.user) && typeof item.user.name === 'string'
-                ? item.user.name
-                : '';
-
-      if (!name.trim()) return null;
-
-      const src =
-        typeof item.image === 'string'
-          ? item.image
-          : typeof item.avatar === 'string'
-            ? item.avatar
-            : typeof item.photo === 'string'
-              ? item.photo
-              : typeof item.profile_image === 'string'
-                ? item.profile_image
-                : isRecord(item.author) && typeof item.author.image === 'string'
-                  ? item.author.image
-                : '';
-
-      return {
-        name,
-        initials: getInitials(name),
-        color: AUTHOR_COLORS[index % AUTHOR_COLORS.length],
-        src,
-      };
-    })
+    .map((item, index) => extractSidebarAuthor(item, index))
     .filter((author): author is SidebarAuthor => author !== null);
+}
+
+function extractAuthorOfWeekSection(payload: unknown): AuthorOfWeekSection {
+  const authors = extractAuthorsFromPayload(payload);
+
+  if (!isRecord(payload)) {
+    return {
+      title: DEFAULT_AUTHOR_OF_WEEK_TITLE,
+      authors,
+    };
+  }
+
+  return {
+    title: asTrimmedString(payload.title) || DEFAULT_AUTHOR_OF_WEEK_TITLE,
+    authors,
+  };
 }
 
 function extractBooksOfYearFromPayload(payload: unknown, authorLookup: AuthorLookup = {}): SidebarBook[] {
@@ -363,6 +379,42 @@ function extractBookListFromPayload(payload: unknown): unknown[] {
   return [];
 }
 
+function parseNextPageNumber(nextValue: unknown, currentPage: number): number | null {
+  if (typeof nextValue !== 'string' || !nextValue.trim()) return null;
+
+  try {
+    const parsed = new URL(nextValue, 'http://local.invalid');
+    const rawPage = parsed.searchParams.get('page');
+    if (!rawPage) return null;
+    const page = Number(rawPage);
+    if (!Number.isFinite(page) || page <= currentPage) return null;
+    return Math.floor(page);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAllCatalogPages(): Promise<unknown[]> {
+  const rows: unknown[] = [];
+  let page = 1;
+
+  for (let pageIndex = 0; pageIndex < MAX_CATALOG_PAGES; pageIndex += 1) {
+    const payload = await apiClient.get<unknown>(endpoints.books.list, {
+      cache: 'no-store',
+      query: { page },
+    });
+
+    rows.push(...extractBookListFromPayload(payload));
+
+    if (!isRecord(payload)) break;
+    const nextPage = parseNextPageNumber(payload.next, page);
+    if (nextPage === null) break;
+    page = nextPage;
+  }
+
+  return rows;
+}
+
 function normalizeApiBook(item: unknown, index: number): Book | null {
   if (!isRecord(item)) return null;
 
@@ -401,6 +453,8 @@ function normalizeApiBook(item: unknown, index: number): Book | null {
     title,
     author,
     genre: categoryName,
+    price: Math.max(0, toNumber(item.price, 0)),
+    stockQuantity: Math.max(0, Math.trunc(toNumber(item.stock_quantity, 0))),
     rating: Math.max(1, Math.min(5, Math.round(toNumber(item.rating, 4)))),
     reviews: toNumber(item.review_count ?? item.reviews, 0),
     likes: toNumber(item.likes ?? item.total_sold, 0),
@@ -412,7 +466,6 @@ function normalizeApiBook(item: unknown, index: number): Book | null {
           : 'Read more about this book in the detail page.',
     img: image,
     imgFallbackColor: BOOK_FALLBACK_COLORS[index % BOOK_FALLBACK_COLORS.length],
-    likedBy: 'Readers from BookBuyBD like this',
     likedByImg: BOOK_FALLBACK_LIKED_BY,
   };
 }
@@ -427,6 +480,31 @@ function normalizeApiBooks(payload: unknown, authorLookup: AuthorLookup = {}): B
       return normalizeApiBook(normalized, index);
     })
     .filter((book): book is Book => book !== null);
+}
+
+function normalizeSearchTerm(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function filterBooksBySearch(books: Book[], rawQuery: string): Book[] {
+  const query = normalizeSearchTerm(rawQuery);
+  if (!query) return books;
+
+  return books.filter((book) => {
+    const haystack = `${book.title} ${book.author} ${book.genre} ${book.excerpt}`.toLowerCase();
+    return haystack.includes(query);
+  });
+}
+
+function filterBooksByGenre(books: Book[], genre: string): Book[] {
+  const target = slugifyCategory(genre);
+  if (!target) return books;
+
+  return books.filter((book) => slugifyCategory(book.genre) === target);
+}
+
+function bookMatchesGenre(book: Book, genre: string): boolean {
+  return slugifyCategory(book.genre) === slugifyCategory(genre);
 }
 
 function Stars({ count }: { count: number }) {
@@ -450,7 +528,18 @@ function AvatarImg({ src, initials, size = 24, color = '#6b7280' }: { src: strin
       style={{ width: size, height: size, background: showFallback ? color : undefined, fontSize: size * 0.38 }}
     >
       {!showFallback
-        ? <img src={src} alt={initials} className="w-full h-full object-cover" onError={() => setErr(true)} />
+        ? (
+            <Image
+                src={src}
+                alt={initials}
+                width={size}
+                height={size}
+                unoptimized
+                loader={({ src: imageSrc }) => imageSrc}
+                className="w-full h-full object-cover"
+                onError={() => setErr(true)}
+            />
+        )
         : <span>{initials[0]}</span>}
     </div>
   );
@@ -462,7 +551,18 @@ function BookCoverImg({ src, color, title }: { src: string; color: string; title
   return (
     <div className="w-full h-full rounded overflow-hidden" style={{ background: showFallback ? color : undefined }}>
       {!showFallback
-        ? <img src={src} alt={title} className="w-full h-full object-cover" onError={() => setErr(true)} />
+        ? (
+            <Image
+                src={src}
+                alt={title}
+                width={600}
+                height={900}
+                unoptimized
+                loader={({ src: imageSrc }) => imageSrc}
+                className="w-full h-full object-cover"
+                onError={() => setErr(true)}
+            />
+        )
         : (
           <div className="w-full h-full flex items-center justify-center p-2" style={{ background: color }}>
             <span className="text-white text-[10px] font-bold text-center leading-tight">{title}</span>
@@ -479,6 +579,7 @@ function Sidebar({
   onGenreClick,
   genres,
   books,
+  authorOfWeekTitle,
   authorsOfWeek,
   authorsLoading,
   booksOfYear,
@@ -487,20 +588,21 @@ function Sidebar({
   onGenreClick: (g: string) => void;
   genres: string[];
   books: Book[];
+  authorOfWeekTitle: string;
   authorsOfWeek: SidebarAuthor[];
   authorsLoading: boolean;
   booksOfYear: SidebarBook[];
   booksOfYearLoading: boolean;
 }) {
   return (
-    <aside className="flex flex-col gap-8" style={{ width: 180, minWidth: 180 }}>
+    <aside className="flex w-full flex-col gap-8 lg:w-[180px] lg:min-w-[180px]">
       <div>
-        <h3 className="text-sm font-bold text-gray-800 mb-3">Author of the week</h3>
+        <h3 className="text-sm font-bold text-gray-800 mb-2">{authorOfWeekTitle || DEFAULT_AUTHOR_OF_WEEK_TITLE}</h3>
         <ul className="space-y-2.5">
           {authorsOfWeek.map((a, i) => (
-            <li key={i} className="flex items-center gap-2.5 group cursor-pointer">
+            <li key={i} className="flex items-center gap-2.5">
               <AvatarImg src={a.src} initials={a.initials} size={30} color={a.color} />
-              <span className="text-xs text-gray-700 group-hover:text-blue-600 transition font-medium">{a.name}</span>
+              <span className="text-xs text-gray-700 font-medium">{a.name}</span>
             </li>
           ))}
           {authorsLoading && (
@@ -552,7 +654,7 @@ function Sidebar({
                     className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: meta.accent, color: meta.color }}
                   >
-                    {books.filter(b => b.genre === g).length}
+                    {books.filter((b) => bookMatchesGenre(b, g)).length}
                   </span>
                 </button>
               </li>
@@ -568,36 +670,96 @@ function Sidebar({
    BOOK CARD — horizontal
 ══════════════════════════════════════ */
 function BookCard({ book }: { book: Book }) {
-  const [liked, setLiked] = useState(false);
+  const router = useRouter();
+  const [qtyInCart, setQtyInCart] = useState(0);
+  const cleanAuthor = book.author.replace(/^by\s+/i, '').trim() || 'Unknown Author';
+  const isAddedToCart = qtyInCart > 0;
+  const effectiveStock = Math.max(0, book.stockQuantity - qtyInCart);
+  const canAddToCart = effectiveStock > 0;
+
+  useEffect(() => {
+    const syncQty = () => {
+      const items = getStoredCartItems();
+      setQtyInCart(getCartQuantityByBookId(book.id, items));
+    };
+
+    syncQty();
+    window.addEventListener('storage', syncQty);
+    window.addEventListener(CART_UPDATED_EVENT, syncQty as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', syncQty);
+      window.removeEventListener(CART_UPDATED_EVENT, syncQty as EventListener);
+    };
+  }, [book.id]);
+
+  const openBook = () => {
+    router.push(`/book?slug=${encodeURIComponent(book.slug)}`);
+  };
+
   return (
-    <div className="flex gap-4 py-5 border-b border-gray-100 group">
-      <Link href={`/book?slug=${book.slug}`} className="flex-shrink-0 rounded-lg shadow-md overflow-hidden w-24 sm:w-28 aspect-[2/3] block">
+    <div
+      className="flex gap-4 py-5 border-b border-gray-100 group cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onClick={openBook}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openBook();
+        }
+      }}
+    >
+      <div className="flex-shrink-0 rounded-lg shadow-md overflow-hidden w-24 sm:w-28 aspect-[2/3]">
         <BookCoverImg src={book.img} color={book.imgFallbackColor} title={book.title} />
-      </Link>
+      </div>
       <div className="flex-1 min-w-0">
-        <Link href={`/book?slug=${book.slug}`} className="block">
-          <h4 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition leading-tight mb-0.5 cursor-pointer line-clamp-1">{book.title}</h4>
-        </Link>
+        <h4 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition leading-tight mb-0.5 line-clamp-1">{book.title}</h4>
         <p className="text-xs text-gray-400 mb-2">{book.author}</p>
         <div className="flex items-center gap-2 mb-2">
           <Stars count={book.rating} />
           <span className="text-[11px] text-gray-400">{book.reviews} ({book.reviews})</span>
         </div>
         <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2 mb-3">{book.excerpt}</p>
-        <div className="flex items-center gap-1.5">
-          <div className="flex -space-x-1.5">
-            {book.likedByImg.slice(0, 2).map((src, i) => (
-              <div key={i} className="rounded-full border-2 border-white overflow-hidden" style={{ width: 20, height: 20 }}>
-                <AvatarImg src={src} initials="U" size={20} color={['#0d9488', '#2563eb', '#7c3aed'][i]} />
-              </div>
-            ))}
-          </div>
-          <button onClick={() => setLiked(l => !l)} className={`flex items-center gap-0.5 transition ${liked ? 'text-blue-500' : 'text-gray-300 hover:text-blue-400'}`}>
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-            </svg>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(event) => {
+              event.stopPropagation();
+              if (isAddedToCart) {
+                const nextItems = removeItemFromStoredCart(book.id);
+                setQtyInCart(getCartQuantityByBookId(book.id, nextItems));
+                return;
+              }
+
+              if (!canAddToCart) return;
+
+              const nextItems = addItemToStoredCart({
+                id: book.id,
+                title: book.title,
+                author: cleanAuthor,
+                cover: book.img,
+                coverFallback: book.imgFallbackColor,
+                price: book.price,
+                qty: 1,
+                edition: book.genre,
+                stockQuantity: book.stockQuantity,
+              });
+              setQtyInCart(getCartQuantityByBookId(book.id, nextItems));
+            }}
+            disabled={!canAddToCart && !isAddedToCart}
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-full transition ${
+              isAddedToCart
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                : canAddToCart
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            {isAddedToCart ? 'Added to Cart' : 'Add to Cart'}
           </button>
-          <span className="text-[10px] text-gray-400 leading-tight">{book.likedBy}</span>
+          <span className="text-[10px] font-semibold text-gray-500">
+            Stock: {effectiveStock}
+          </span>
         </div>
       </div>
     </div>
@@ -608,17 +770,31 @@ function BookCard({ book }: { book: Book }) {
    BOOK CARD — grid/detail (used in category detail page)
 ══════════════════════════════════════ */
 function BookCardGrid({ book }: { book: Book }) {
+  const router = useRouter();
   const [liked, setLiked] = useState(false);
+  const openBook = () => {
+    router.push(`/book?slug=${encodeURIComponent(book.slug)}`);
+  };
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
-      <Link href={`/book?slug=${book.slug}`} className="relative overflow-hidden w-full aspect-[2/3] block">
+    <div
+      className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onClick={openBook}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openBook();
+        }
+      }}
+    >
+      <div className="relative overflow-hidden w-full aspect-[2/3]">
         <BookCoverImg src={book.img} color={book.imgFallbackColor} title={book.title} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      </Link>
+      </div>
       <div className="p-3 flex-1 flex flex-col">
-        <Link href={`/book?slug=${book.slug}`} className="block group-hover:text-blue-600 transition">
-          <h4 className="text-xs font-bold text-gray-900 transition leading-tight mb-0.5 line-clamp-1 group-hover:text-blue-600">{book.title}</h4>
-        </Link>
+        <h4 className="text-xs font-bold text-gray-900 transition leading-tight mb-0.5 line-clamp-1 group-hover:text-blue-600">{book.title}</h4>
         <p className="text-[10px] text-gray-400 mb-1.5">{book.author}</p>
         <div className="flex items-center gap-1.5 mb-2">
           <Stars count={book.rating} />
@@ -637,7 +813,10 @@ function BookCardGrid({ book }: { book: Book }) {
             <span className="text-[9px] text-gray-400">{book.likes} likes</span>
           </div>
           <button
-            onClick={() => setLiked(l => !l)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setLiked((l) => !l);
+            }}
             className={`transition ${liked ? 'text-blue-500' : 'text-gray-300 hover:text-blue-400'}`}
           >
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -687,7 +866,7 @@ function CategoryDetailPage({
     <div>
       {/* ── Hero banner ── */}
       <div
-        className="rounded-2xl px-8 py-8 mb-7 relative overflow-hidden"
+        className="relative mb-7 overflow-hidden rounded-2xl px-4 py-6 sm:px-8 sm:py-8"
         style={{ background: `linear-gradient(135deg, ${meta.color} 0%, ${meta.color}cc 100%)` }}
       >
         {/* Decorative circles */}
@@ -705,7 +884,7 @@ function CategoryDetailPage({
           Back to all books
         </button>
 
-        <div className="flex items-end justify-between relative z-10">
+        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <span
               className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-2"
@@ -733,11 +912,11 @@ function CategoryDetailPage({
       </div>
 
       {/* ── Sort bar ── */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500 font-medium">
           Showing <span className="text-gray-800 font-bold">{shown.length}</span> of <span className="text-gray-800 font-bold">{allBooks.length}</span> books
         </p>
-        <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-full">
+        <div className="flex flex-wrap items-center gap-1 rounded-full bg-gray-100 p-0.5">
           {(['popular', 'rating', 'reviews'] as const).map(s => (
             <button
               key={s}
@@ -759,7 +938,7 @@ function CategoryDetailPage({
           <p className="text-sm font-medium">No books in this genre yet</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {shown.map(book => <BookCardGrid key={book.id} book={book} />)}
         </div>
       )}
@@ -804,14 +983,14 @@ function GenrePreviewSection({
   onViewMore: (g: string) => void;
 }) {
   const meta = GENRE_META[genre] ?? GENRE_META['All Genres'];
-  const genreBooks = books.filter(b => b.genre === genre).slice(0, PREVIEW_SIZE);
-  const total = books.filter(b => b.genre === genre).length;
+  const genreBooks = books.filter((b) => bookMatchesGenre(b, genre)).slice(0, PREVIEW_SIZE);
+  const total = books.filter((b) => bookMatchesGenre(b, genre)).length;
 
   return (
     <div className="mb-8">
       {/* Section header */}
       <div
-        className="flex items-center justify-between px-4 py-3 rounded-xl mb-3"
+        className="mb-3 flex flex-col gap-3 rounded-xl px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
         style={{ background: meta.accent }}
       >
         <div className="flex items-center gap-2">
@@ -839,7 +1018,7 @@ function GenrePreviewSection({
       </div>
 
       {/* Preview cards row */}
-      <div className="grid grid-cols-2 gap-x-6">
+      <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
         {genreBooks.map(book => <BookCard key={book.id} book={book} />)}
       </div>
     </div>
@@ -850,6 +1029,9 @@ function GenrePreviewSection({
    MAIN EXPORT
 ══════════════════════════════════════ */
 export default function Books() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [genreOptions, setGenreOptions] = useState<GenreOption[]>(DEFAULT_GENRE_OPTIONS);
   const [activeGenre, setActiveGenre] = useState('All Genres');
   const [detailGenre, setDetailGenre] = useState<string | null>(null);
@@ -859,7 +1041,7 @@ export default function Books() {
   const [genreBooks, setGenreBooks] = useState<Book[]>([]);
   const [booksLoading, setBooksLoading] = useState(true);
   const [booksError, setBooksError] = useState<string | null>(null);
-  const [authorLookup, setAuthorLookup] = useState<AuthorLookup>({});
+  const [authorOfWeekTitle, setAuthorOfWeekTitle] = useState(DEFAULT_AUTHOR_OF_WEEK_TITLE);
   const [authorsOfWeek, setAuthorsOfWeek] = useState<SidebarAuthor[]>([]);
   const [authorsLoading, setAuthorsLoading] = useState(true);
   const [authorsError, setAuthorsError] = useState<string | null>(null);
@@ -868,6 +1050,8 @@ export default function Books() {
   const [booksOfYearError, setBooksOfYearError] = useState<string | null>(null);
 
   const genres = genreOptions.map((option) => option.name);
+  const genreParam = searchParams.get('genre')?.trim() ?? '';
+  const searchQueryParam = searchParams.get('search')?.trim() ?? '';
 
   useEffect(() => {
     const loadGenres = async () => {
@@ -895,16 +1079,42 @@ export default function Books() {
   }, []);
 
   useEffect(() => {
+    const normalizedRequestedGenre = slugifyCategory(genreParam);
+    if (!normalizedRequestedGenre) return;
+
+    const matchedGenre = genreOptions.find((option) => {
+      if (!option.slug) return false;
+      const optionSlug = slugifyCategory(option.slug);
+      const optionNameSlug = slugifyCategory(option.name);
+      return optionSlug === normalizedRequestedGenre || optionNameSlug === normalizedRequestedGenre;
+    });
+
+    if (!matchedGenre || matchedGenre.name === 'All Genres') return;
+
+    setActiveGenre((prev) => (prev === matchedGenre.name ? prev : matchedGenre.name));
+    setDetailGenre((prev) => (prev === matchedGenre.name ? prev : matchedGenre.name));
+  }, [genreParam, genreOptions]);
+
+  useEffect(() => {
+    if (genreParam) return;
+    setActiveGenre('All Genres');
+    setDetailGenre(null);
+    setAllGenreVisible(PREVIEW_SIZE);
+  }, [genreParam, searchQueryParam]);
+
+  useEffect(() => {
     const loadAllBooks = async () => {
       setBooksLoading(true);
       setBooksError(null);
 
       try {
-        const payload = await booksService.getCatalog();
+        const payload = searchQueryParam
+          ? await booksService.getCatalog({ search: searchQueryParam })
+          : await fetchAllCatalogPages();
         const lookupFromPayload = extractAuthorLookupFromPayload(payload);
-        setAuthorLookup((prev) => mergeAuthorLookups(prev, lookupFromPayload));
         const mapped = normalizeApiBooks(payload, lookupFromPayload);
-        setAllBooks(mapped);
+        const filtered = filterBooksBySearch(mapped, searchQueryParam);
+        setAllBooks(filtered);
       } catch (error) {
         setBooksError(error instanceof ApiError ? error.message : 'Failed to load books.');
         setAllBooks([]);
@@ -914,7 +1124,7 @@ export default function Books() {
     };
 
     void loadAllBooks();
-  }, []);
+  }, [searchQueryParam]);
 
   useEffect(() => {
     const loadAuthorsOfWeek = async () => {
@@ -923,13 +1133,16 @@ export default function Books() {
 
       try {
         const payload = await booksService.getAuthorOfWeek();
-        setAuthorsOfWeek(extractAuthorsFromPayload(payload));
+        const section = extractAuthorOfWeekSection(payload);
+        setAuthorOfWeekTitle(section.title);
+        setAuthorsOfWeek(section.authors);
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) {
           setAuthorsError(null);
         } else {
           setAuthorsError(error instanceof ApiError ? error.message : 'Failed to load author of the week.');
         }
+        setAuthorOfWeekTitle(DEFAULT_AUTHOR_OF_WEEK_TITLE);
         setAuthorsOfWeek([]);
       } finally {
         setAuthorsLoading(false);
@@ -951,9 +1164,7 @@ export default function Books() {
           limit: SIDEBAR_BOOKS_OF_YEAR_LIMIT,
         });
         const lookupFromPayload = extractAuthorLookupFromPayload(payload);
-        setAuthorLookup((prev) => mergeAuthorLookups(prev, lookupFromPayload));
-        const mergedLookup = mergeAuthorLookups(authorLookup, lookupFromPayload);
-        setBooksOfYear(extractBooksOfYearFromPayload(payload, mergedLookup));
+        setBooksOfYear(extractBooksOfYearFromPayload(payload, lookupFromPayload));
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) {
           setBooksOfYearError(null);
@@ -967,7 +1178,7 @@ export default function Books() {
     };
 
     void loadBooksOfYear();
-  }, [authorLookup]);
+  }, []);
 
   const effectiveActiveGenre = genres.includes(activeGenre) ? activeGenre : 'All Genres';
   const effectiveDetailGenre = detailGenre && genres.includes(detailGenre) ? detailGenre : null;
@@ -988,14 +1199,16 @@ export default function Books() {
 
       setBooksLoading(true);
       setBooksError(null);
-      setGenreBooks([]);
 
       try {
-        const payload = await booksService.getCatalog({ category: slug });
+        const payload = await booksService.getCatalog({
+          category: slug,
+          ...(searchQueryParam ? { search: searchQueryParam } : {}),
+        });
         const lookupFromPayload = extractAuthorLookupFromPayload(payload);
-        setAuthorLookup((prev) => mergeAuthorLookups(prev, lookupFromPayload));
-        const mergedLookup = mergeAuthorLookups(authorLookup, lookupFromPayload);
-        setGenreBooks(normalizeApiBooks(payload, mergedLookup));
+        const normalized = normalizeApiBooks(payload, lookupFromPayload);
+        const filtered = filterBooksBySearch(normalized, searchQueryParam);
+        setGenreBooks(filterBooksByGenre(filtered, targetGenre));
       } catch (error) {
         setBooksError(error instanceof ApiError ? error.message : 'Failed to load books.');
         setGenreBooks([]);
@@ -1005,16 +1218,58 @@ export default function Books() {
     };
 
     void loadGenreBooks();
-  }, [allBooks, genreOptions, targetGenre, authorLookup]);
+  }, [allBooks, genreOptions, targetGenre, searchQueryParam]);
+
+  const getCategoryDetailHref = (genre: string) => {
+    const slug = genreOptions.find((option) => option.name === genre)?.slug || slugifyCategory(genre);
+    const params = new URLSearchParams();
+    params.set('genre', slug);
+    if (searchQueryParam) {
+      params.set('search', searchQueryParam);
+    }
+    return `/categories?${params.toString()}`;
+  };
 
   // navigate to detail view
   const goToDetail = (g: string) => {
+    if (pathname !== '/categories') {
+      router.push(getCategoryDetailHref(g));
+      return;
+    }
     setDetailGenre(g);
+    setActiveGenre(g);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // back to list
-  const goBack = () => setDetailGenre(null);
+  const goBack = () => {
+    setDetailGenre(null);
+    if (pathname === '/categories' && (genreParam || searchQueryParam)) {
+      const params = new URLSearchParams();
+      if (searchQueryParam) {
+        params.set('search', searchQueryParam);
+      }
+      const query = params.toString();
+      router.replace(query ? `/categories?${query}` : '/categories');
+    }
+  };
+
+  const clearSearch = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('search');
+    params.delete('q');
+    const query = params.toString();
+    const nextUrl = query ? `${pathname}?${query}` : pathname;
+    router.replace(nextUrl);
+
+    // Fallback hard navigation if search params remain due client-router stall.
+    setTimeout(() => {
+      const current = new URL(window.location.href);
+      if (current.searchParams.get('search') || current.searchParams.get('q')) {
+        window.location.assign(nextUrl);
+      }
+    }, 200);
+  };
 
   /* ── filtered list for "All Genres" tab ── */
   const filteredAll = effectiveActiveGenre === 'All Genres' ? allBooks : genreBooks;
@@ -1032,14 +1287,15 @@ export default function Books() {
         }
       `}</style>
 
-      <section className="max-w-5xl mx-auto px-6 py-10">
-        <div className="flex gap-8">
+      <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
 
           {/* ── Sidebar ── */}
           <Sidebar
             onGenreClick={goToDetail}
             genres={genres}
             books={allBooks}
+            authorOfWeekTitle={authorOfWeekTitle}
             authorsOfWeek={authorsOfWeek}
             authorsLoading={authorsLoading}
             booksOfYear={booksOfYear}
@@ -1047,10 +1303,24 @@ export default function Books() {
           />
 
           {/* ── Divider ── */}
-          <div className="w-px bg-gray-100 flex-shrink-0" />
+          <div className="hidden w-px flex-shrink-0 bg-gray-100 lg:block" />
 
           {/* ── Main content ── */}
           <div className="flex-1 min-w-0">
+            {searchQueryParam && (
+              <div className="mb-4 flex flex-col gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <p className="text-xs text-blue-800">
+                  Showing search results for <span className="font-bold">&apos;{searchQueryParam}&apos;</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 transition"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
 
             {/* ════ DETAIL PAGE ════ */}
             {effectiveDetailGenre ? (
@@ -1082,19 +1352,30 @@ export default function Books() {
 
                 {/* ── "All Genres" shows per-genre sections with fixed View More buttons ── */}
                 {effectiveActiveGenre === 'All Genres' ? (
-                  <div>
-                    {genres.filter(g => g !== 'All Genres').map(g => (
-                      allBooks.some(b => b.genre === g) && (
-                        <GenrePreviewSection key={g} genre={g} books={allBooks} onViewMore={goToDetail} />
-                      )
-                    ))}
-                  </div>
+                  filteredAll.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-gray-300">
+                      <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-4.35-4.35m1.85-4.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <p className="text-sm font-medium text-gray-500">
+                        No books found{searchQueryParam ? ` for "${searchQueryParam}"` : ''}.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      {genres.filter(g => g !== 'All Genres').map(g => (
+                        allBooks.some((b) => bookMatchesGenre(b, g)) && (
+                          <GenrePreviewSection key={g} genre={g} books={allBooks} onViewMore={goToDetail} />
+                        )
+                      ))}
+                    </div>
+                  )
                 ) : (
                   /* ── Single genre filtered list ── */
                   <div>
                     {/* Genre banner */}
                     <div
-                      className="rounded-xl px-5 py-4 mb-4 flex items-center justify-between"
+                      className="mb-4 flex flex-col gap-3 rounded-xl px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
                       style={{ background: activeMeta.accent }}
                     >
                       <div>
@@ -1127,7 +1408,7 @@ export default function Books() {
                         <p className="text-sm font-medium">No books in this genre yet</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-x-6">
+                      <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                         {shownAll.map(book => <BookCard key={book.id} book={book} />)}
                       </div>
                     )}

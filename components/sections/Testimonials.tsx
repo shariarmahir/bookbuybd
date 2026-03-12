@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 
 /* ══════════════════════════════════════════════
    BENEFITS DATA
@@ -170,9 +171,13 @@ function Avatar({
       style={{ width: size, height: size, background: err ? color : undefined, fontSize: size * 0.3 }}
     >
       {!err ? (
-        <img
+        <Image
           src={image}
           alt={initials}
+          width={size}
+          height={size}
+          unoptimized
+          loader={({ src }) => src}
           className="w-full h-full object-cover"
           onError={() => setErr(true)}
         />
@@ -210,7 +215,7 @@ function BookStack() {
         </div>
         <div className="absolute inset-0 flex flex-col items-start justify-between p-3">
           <div>
-            <p className="text-teal-200 text-[7px] uppercase tracking-widest font-bold">A LEADER'S GUIDE TO</p>
+            <p className="text-teal-200 text-[7px] uppercase tracking-widest font-bold">A LEADER&apos;S GUIDE TO</p>
             <p className="text-white text-base font-black leading-tight mt-1">EVOLVING<br />THROUGH<br />ADVERSITY</p>
           </div>
           <div>
@@ -239,7 +244,7 @@ function ReviewCard({
       style={{ background: '#fefce8', minHeight: 180 }}
     >
       {/* Quote mark */}
-      <div className="text-yellow-300 text-4xl font-black leading-none mb-1 select-none">"</div>
+      <div className="text-yellow-300 text-4xl font-black leading-none mb-1 select-none">&ldquo;</div>
       <p className="text-xs text-gray-700 leading-relaxed flex-1">{review.text}</p>
       <div className="mt-3 pt-3 border-t border-yellow-200">
         <Stars count={review.stars} />
@@ -265,10 +270,12 @@ export default function Testimonials() {
   const [startIdx, setStartIdx] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(VISIBLE);
+  const [teacherImageError, setTeacherImageError] = useState(false);
   const total = REVIEWS.length;
 
   // Get 3 visible reviews (wrapping)
-  const visible = Array.from({ length: VISIBLE }, (_, i) => REVIEWS[(startIdx + i) % total]);
+  const visible = Array.from({ length: visibleCount }, (_, i) => REVIEWS[(startIdx + i) % total]);
 
   const next = useCallback(() => {
     setStartIdx(i => (i + 1) % total);
@@ -286,6 +293,26 @@ export default function Testimonials() {
     const id = setInterval(next, INTERVAL);
     return () => clearInterval(id);
   }, [next, paused]);
+
+  useEffect(() => {
+    const setCountByViewport = () => {
+      if (window.innerWidth < 768) {
+        setVisibleCount(1);
+        return;
+      }
+
+      if (window.innerWidth < 1280) {
+        setVisibleCount(2);
+        return;
+      }
+
+      setVisibleCount(3);
+    };
+
+    setCountByViewport();
+    window.addEventListener('resize', setCountByViewport);
+    return () => window.removeEventListener('resize', setCountByViewport);
+  }, []);
 
   return (
     <>
@@ -328,15 +355,15 @@ export default function Testimonials() {
       <div className="bg-white">
 
         {/* ══ SECTION 1: Benefits ══ */}
-        <section className="max-w-5xl mx-auto px-6 py-14">
+        <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
           <div className="flex flex-col items-center text-center">
-            <h2 className="text-2xl font-extrabold text-gray-900 mb-8 tracking-tight">
+            <h2 className="mb-8 text-2xl font-extrabold tracking-tight text-gray-900">
               Benifits Of Reading Book
             </h2>
             <div className="mb-8">
               <BookStack />
             </div>
-            <ul className="grid grid-cols-2 gap-x-10 gap-y-5">
+            <ul className="grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2 sm:gap-y-5">
               {BENEFITS.map((b, i) => (
                 <li
                   key={i}
@@ -355,45 +382,43 @@ export default function Testimonials() {
 
         {/* ══ SECTION 2: Teacher Quote ══ */}
         <section className="w-full overflow-hidden" style={{ background: 'rgba(52, 185, 225, 1)' }}>
-          <div className="max-w-5xl mx-auto px-6">
-            <div className="flex items-end gap-0">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6">
+            <div className="flex flex-col items-center gap-0 md:flex-row md:items-end">
 
               {/* Person photo */}
-              <div className="person-block flex-shrink-0 flex items-end" style={{ width: 220 }}>
-                <div className="relative overflow-hidden" style={{ width: 200, height: 250 }}>
-                  <img
-                    src="/images/review/teacher.jpg"
-                    alt="Tom Byron"
-                    className="absolute inset-0 w-full h-full object-cover object-top"
-                    onError={e => {
-                      const el = e.currentTarget;
-                      el.style.display = 'none';
-                      (el.nextSibling as HTMLElement).style.display = 'flex';
-                    }}
-                  />
-                  {/* Silhouette fallback */}
-                  <div
-                    className="absolute inset-0 bg-gray-400/30 items-end justify-center"
-                    style={{ display: 'none' }}
-                  >
-                    <div className="absolute top-8 left-1/2 -translate-x-1/2 w-20 h-20 bg-gray-400 rounded-full" />
-                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gray-400 rounded-t-[50%]" />
-                    <div className="absolute bottom-0 left-5 right-5 h-28 rounded-t-3xl" style={{ background: 'linear-gradient(180deg,#cbd5e1,#94a3b8)' }} />
-                  </div>
+              <div className="person-block flex flex-shrink-0 items-end md:w-[220px]">
+                <div className="relative h-[240px] w-[180px] overflow-hidden sm:h-[250px] sm:w-[200px]">
+                  {!teacherImageError && (
+                    <Image
+                      src="/images/review/teacher.jpg"
+                      alt="Tom Byron"
+                      fill
+                      sizes="(max-width: 640px) 180px, 200px"
+                      className="absolute inset-0 h-full w-full object-cover object-top"
+                      onError={() => setTeacherImageError(true)}
+                    />
+                  )}
+                  {teacherImageError && (
+                    <div className="absolute inset-0 flex items-end justify-center bg-gray-400/30">
+                      <div className="absolute left-1/2 top-8 h-20 w-20 -translate-x-1/2 rounded-full bg-gray-400" />
+                      <div className="absolute bottom-0 left-0 right-0 h-32 rounded-t-[50%] bg-gray-400" />
+                      <div className="absolute bottom-0 left-5 right-5 h-28 rounded-t-3xl" style={{ background: 'linear-gradient(180deg,#cbd5e1,#94a3b8)' }} />
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Quote */}
-              <div className="quote-block flex-1 flex flex-col justify-center py-10 pl-8">
+              <div className="quote-block flex flex-1 flex-col justify-center px-2 py-8 text-center md:py-10 md:pl-8 md:pr-0 md:text-left">
                 <h3 className="text-2xl font-extrabold text-white mb-3 tracking-tight">Mahir Shariar Mahin</h3>
-                <p className="text-sm leading-relaxed max-w-md mb-5" style={{ color: 'hsla(165, 100%, 98%, 0.85)' }}>
+                <p className="mb-5 max-w-md text-sm leading-relaxed md:max-w-none" style={{ color: 'hsla(165, 100%, 98%, 0.85)' }}>
                   Books really are your best friends as you can rely on them
                   when you are bored, upset, depressed, lonely or annoyed.
                   They will accompany you anytime you want them and
                   enhance your mood. They share with you information and
                   knowledge any time you need.
                 </p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3 md:justify-start">
                   <div className="w-10 h-px bg-teal-400" />
                   <span className="text-teal-300 text-sm font-semibold tracking-wide">Researcher</span>
                 </div>
@@ -404,18 +429,18 @@ export default function Testimonials() {
 
         {/* ══ SECTION 3: Customer Feedback ══ */}
         <section
-          className="max-w-5xl mx-auto px-6 py-12"
+          className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-12"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
           {/* Header row */}
-          <div className="flex items-end justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
                 Customer feedback.
               </h2>
               <p className="text-xs text-gray-400 mt-1">
-                Showing {startIdx + 1}–{((startIdx + VISIBLE - 1) % total) + 1} of {total} reviews
+                Showing {startIdx + 1}–{((startIdx + visibleCount - 1) % total) + 1} of {total} reviews
               </p>
             </div>
 
@@ -454,7 +479,7 @@ export default function Testimonials() {
           </div>
 
           {/* Review cards grid — 3 visible, slide/fade on change */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {visible.map((review, i) => (
               <ReviewCard
                 key={`${animKey}-${i}`}
@@ -467,8 +492,8 @@ export default function Testimonials() {
           {/* Dot indicators */}
           <div className="flex justify-center gap-1.5 mt-6">
             {Array.from({ length: total }).map((_, i) => {
-              const isActive = i >= startIdx && i < startIdx + VISIBLE
-                || (startIdx + VISIBLE > total && i < (startIdx + VISIBLE) % total);
+              const isActive = i >= startIdx && i < startIdx + visibleCount
+                || (startIdx + visibleCount > total && i < (startIdx + visibleCount) % total);
               return (
                 <button
                   key={i}

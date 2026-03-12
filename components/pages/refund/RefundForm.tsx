@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const requirements = [
     { id: 1, title: 'Original Condition', desc: 'Books must be in their original condition without any marks or damage.' },
@@ -11,7 +11,6 @@ const requirements = [
 ];
 
 export default function RefundForm() {
-    const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         orderId: '',
         email: '',
@@ -30,14 +29,14 @@ export default function RefundForm() {
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="max-w-2xl mx-auto my-20 p-12 bg-white rounded-3xl shadow-xl text-center border border-emerald-50"
+                className="mx-auto my-10 max-w-2xl rounded-3xl border border-emerald-50 bg-white p-6 text-center shadow-xl sm:my-20 sm:p-12"
             >
                 <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
                     <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">Request Submitted</h2>
+                <h2 className="mb-4 text-2xl font-bold text-gray-900 sm:text-3xl">Request Submitted</h2>
                 <p className="text-gray-600 mb-8">Your refund eligibility request has been received. Our team will review your order <strong>{formData.orderId}</strong> and get back to you via <strong>{formData.email}</strong> within 24-48 hours.</p>
                 <button
                     onClick={() => window.location.href = '/'}
@@ -50,8 +49,8 @@ export default function RefundForm() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto px-4 py-12 md:py-20">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <div className="mx-auto max-w-6xl px-4 py-8 md:py-20">
+            <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-12">
                 {/* Left: Info & Requirements */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -59,12 +58,12 @@ export default function RefundForm() {
                     className="space-y-8"
                 >
                     <div>
-                        <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tight">
+                        <h1 className="mb-4 text-3xl font-black tracking-tight text-gray-900 md:text-5xl">
                             Refund & Return <br />
                             <span className="text-brand-600 italic">Eligibility</span>
                         </h1>
                         <p className="text-lg text-gray-600">
-                            We want you to love every book you buy. If something isn't right, our simple refund process is here to help.
+                            We want you to love every book you buy. If something isn&apos;t right, our simple refund process is here to help.
                         </p>
                     </div>
 
@@ -87,7 +86,7 @@ export default function RefundForm() {
 
                     <div className="bg-brand-50 p-6 rounded-3xl border border-brand-100">
                         <p className="text-sm text-brand-800 font-medium">
-                            <strong>Note:</strong> Custom printed books are only eligible for refund if there is a manufacturing defect or printing error.
+                            <strong>Note:</strong> Books are eligible for refund only if there is a manufacturing defect or delivery damage.
                         </p>
                     </div>
                 </motion.div>
@@ -96,7 +95,7 @@ export default function RefundForm() {
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl shadow-gray-200/50 border border-gray-100"
+                    className="rounded-[2rem] border border-gray-100 bg-white p-5 shadow-2xl shadow-gray-200/50 sm:rounded-[2.5rem] sm:p-8 md:p-10"
                 >
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-4">
@@ -139,7 +138,7 @@ export default function RefundForm() {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-900 mb-2">What would you prefer?</label>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, returnType: 'fund' })}
@@ -160,7 +159,7 @@ export default function RefundForm() {
 
                         <button
                             type="submit"
-                            className="w-full py-5 rounded-2xl bg-brand-600 text-white font-black text-lg hover:bg-brand-700 transition-all shadow-xl shadow-brand-200 mt-8 flex items-center justify-center gap-2 group"
+                            className="group mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-4 text-base font-black text-white shadow-xl shadow-brand-200 transition-all hover:bg-brand-700 sm:py-5 sm:text-lg"
                         >
                             Verify Eligibility
                             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

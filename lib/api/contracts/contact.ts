@@ -36,4 +36,5 @@ export interface ContactMessageStatus {
   messageId: string;
   status: 'received' | 'in_review' | 'resolved' | 'closed';
   updatedAt: string;
+  isRead?: boolean;
 }

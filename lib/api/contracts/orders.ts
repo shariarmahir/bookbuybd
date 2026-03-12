@@ -8,6 +8,9 @@ export interface OrderCreateItemPayload {
   book_id: number;
   quantity: number;
   unit_price?: number;
+  book_variant?: 'paperback' | 'hardcover';
+  book_quality?: string;
+  edition?: string;
 }
 
 export interface OrderCreatePayload {
@@ -37,6 +40,6 @@ export interface OrderCreateResponse {
   created_at: string;
 }
 
-export interface StoredOrder extends OrderCreatePayload, OrderCreateResponse {
+export type StoredOrder = OrderCreatePayload & OrderCreateResponse & {
   updated_at: string;
-}
+};

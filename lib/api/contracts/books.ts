@@ -2,6 +2,15 @@ export type BookSort = 'popular' | 'rating' | 'reviews' | 'newest';
 
 export type BookStatus = 'published' | 'coming_soon';
 
+export type BookVariant = 'paperback' | 'hardcover';
+
+export interface BookVariantInfo {
+  variant: BookVariant;
+  price: string;
+  quality: string;
+  stock_quantity?: number;
+}
+
 export interface BookListQuery {
   genre?: string;
   sort?: BookSort;
@@ -10,6 +19,12 @@ export interface BookListQuery {
   search?: string;
   limit?: number;
   offset?: number;
+  category?: string;
+}
+
+export interface CatalogQuery {
+  category?: string;
+  search?: string;
 }
 
 export interface BookListItem {
@@ -48,8 +63,8 @@ export interface BookAuthor {
   id: number;
   name: string;
   slug: string;
-  bio: string;
-  photo: string;
+  bio: string | null;
+  photo: string | null;
   is_active: boolean;
 }
 
@@ -62,6 +77,12 @@ export interface BookDetailResponse {
   description: string;
   image: string;
   price: string;
+  paperback_price?: string;
+  hardcover_price?: string;
+  paperback_quality?: string;
+  hardcover_quality?: string;
+  default_variant?: BookVariant;
+  variants?: Partial<Record<BookVariant, BookVariantInfo>>;
   stock_quantity: number;
   is_in_stock: boolean;
   is_coming_soon: boolean;
@@ -90,4 +111,12 @@ export interface BestSellingBook {
   price: string;
   category_name: string;
   total_sold: number;
+}
+
+export interface AuthorOfWeekResponse {
+  id: number | null;
+  title: string;
+  note: string;
+  author: BookAuthor | null;
+  created_at: string;
 }

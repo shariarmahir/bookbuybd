@@ -1,31 +1,110 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Cart from './cart';
 import Checkout from './checkout';
 import EditCheckout from './editcheckout';
 import ConfirmOrder from './confirmorder';
-import { CartItem, CheckoutForm, EMPTY_FORM, clearStoredCartItems } from './cartStore';
+import {
+  CartItem,
+  CheckoutForm,
+  DEFAULT_DELIVERY_SETTINGS,
+  DeliverySettings,
+  EMPTY_FORM,
+  calculateDeliveryCharge,
+  clearStoredCartItems,
+  getStoredCartItems,
+  persistCartItems,
+} from './cartStore';
 import { ApiError, apiClient, endpoints } from '@/lib/api';
 
 type Page = 'cart' | 'checkout' | 'editcheckout' | 'confirm';
+type DeliverySettingsPayload = {
+  deliveryCharge?: number | string;
+  delivery_charge?: number | string;
+  freeDeliveryThreshold?: number | string;
+  free_delivery_threshold?: number | string;
+};
+
+function toNumber(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeDeliverySettings(payload: unknown): DeliverySettings {
+  const record = (payload && typeof payload === 'object') ? (payload as DeliverySettingsPayload) : {};
+  return {
+    deliveryCharge: Math.max(0, toNumber(record.deliveryCharge ?? record.delivery_charge, DEFAULT_DELIVERY_SETTINGS.deliveryCharge)),
+    freeDeliveryThreshold: Math.max(0, toNumber(record.freeDeliveryThreshold ?? record.free_delivery_threshold, DEFAULT_DELIVERY_SETTINGS.freeDeliveryThreshold)),
+  };
+}
 
 export default function ShopFlow() {
   const [page, setPage] = useState<Page>('cart');
   const [items, setItems] = useState<CartItem[]>([]);
   const [form, setForm] = useState<CheckoutForm>(EMPTY_FORM);
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [placeOrderError, setPlaceOrderError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load local book cart
+  useEffect(() => {
+    const loadCart = () => {
+      setItems(getStoredCartItems());
+      setIsLoading(false);
+    };
+
+    loadCart();
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (items.length === 0) {
+      clearStoredCartItems();
+      return;
+    }
+
+    persistCartItems(items);
+  }, [items, isLoading]);
+
+  useEffect(() => {
+    let mounted = true;
+    const deliverySettingsUrl =
+      (endpoints as unknown as { business?: { deliverySettings?: string } }).business?.deliverySettings
+      ?? '/business/delivery-settings/';
+
+    const loadDeliverySettings = async () => {
+      try {
+        const payload = await apiClient.get<unknown>(deliverySettingsUrl, { cache: 'no-store' });
+        if (mounted) setDeliverySettings(normalizeDeliverySettings(payload));
+      } catch {
+        if (mounted) setDeliverySettings(DEFAULT_DELIVERY_SETTINGS);
+      }
+    };
+
+    void loadDeliverySettings();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <>
       {/* ── Page router ── */}
       {page === 'cart' && (
-        <Cart
-          onCheckout={(cartItems) => {
-            setItems(cartItems);
-            setPage('checkout');
-          }}
-        />
+        isLoading ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-pulse flex flex-col items-center gap-4">
+              <div className="w-12 h-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
+              <p className="text-gray-500 font-medium">Loading your cart...</p>
+            </div>
+          </div>
+        ) : (
+          <Cart
+            items={items}
+            setItems={setItems}
+            onCheckout={() => setPage('checkout')}
+            deliverySettings={deliverySettings}
+          />
+        )
       )}
 
       {page === 'checkout' && (
@@ -37,14 +116,18 @@ export default function ShopFlow() {
           }}
           isSubmitting={isPlacingOrder}
           submitError={placeOrderError}
+          deliverySettings={deliverySettings}
           onConfirm={async (f) => {
             if (isPlacingOrder) return;
+            if (items.length === 0) {
+              setPlaceOrderError('Your cart is empty.');
+              return;
+            }
 
             setPlaceOrderError(null);
             setIsPlacingOrder(true);
             const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-            const deliveryCharge = subtotal >= 1000 ? 0 : 60;
-            const totalAmount = subtotal + deliveryCharge;
+            const deliveryCharge = calculateDeliveryCharge(subtotal, deliverySettings);
 
             try {
               await apiClient.post(endpoints.orders.create, {
@@ -61,12 +144,16 @@ export default function ShopFlow() {
                   book_id: item.id,
                   quantity: item.qty,
                   unit_price: item.price,
+                  ...(item.variant ? { book_variant: item.variant } : {}),
+                  ...(item.quality ? { book_quality: item.quality } : {}),
+                  ...(item.edition ? { edition: item.edition } : {}),
                 })),
                 subtotal,
                 delivery_charge: deliveryCharge,
-                total_amount: totalAmount,
+                total_amount: subtotal + deliveryCharge,
               });
 
+              clearStoredCartItems();
               setForm(f);
               setPage('confirm');
             } catch (error) {
@@ -102,11 +189,12 @@ export default function ShopFlow() {
         <ConfirmOrder
           items={items}
           form={form}
+          deliverySettings={deliverySettings}
           onContinueShopping={() => {
             clearStoredCartItems();
             setPage('cart');
             setItems([]);
-            setForm({ fullName: '', phone: '', email: '', address: '', city: '', district: '', postalCode: '', note: '', paymentMethod: 'cod' });
+            setForm(EMPTY_FORM);
           }}
         />
       )}

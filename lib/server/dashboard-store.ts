@@ -17,6 +17,10 @@ interface DashboardBook {
   genre: string;
   stock: number;
   price: number;
+  paperback_price?: number;
+  hardcover_price?: number;
+  paperback_quality?: string;
+  hardcover_quality?: string;
   status: 'active' | 'inactive';
   orders: number;
 }
@@ -101,4 +105,3 @@ export function getDashboardCalendar() {
 export function getDashboardFavorites() {
   return [] as Array<{ id: number; label: string; color: string }>;
 }
-

@@ -1,14 +1,133 @@
 import { apiClient } from '@/lib/api/client';
 import type {
+  AuthorOfWeekResponse,
   BestSellingBook,
   BestSellingQuery,
   BookAuthor,
+  CatalogQuery,
   BookDetailResponse,
   BookListItem,
   BookListQuery,
   PaginatedResponse,
 } from '@/lib/api/contracts/books';
 import { endpoints } from '@/lib/api/endpoints';
+
+const MAX_SEARCH_PAGES = 40;
+
+interface SearchPageEnvelope {
+  count?: unknown;
+  next?: unknown;
+  previous?: unknown;
+  results: unknown[];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSearchPageEnvelope(value: unknown): value is SearchPageEnvelope {
+  return isRecord(value) && Array.isArray(value.results);
+}
+
+function slugifyCategory(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+function parseNextPageNumber(nextValue: unknown): number | null {
+  if (typeof nextValue !== 'string' || !nextValue.trim()) {
+    return null;
+  }
+
+  try {
+    const url = new URL(nextValue, 'http://local.invalid');
+    const rawPage = url.searchParams.get('page');
+    if (!rawPage) return null;
+    const parsed = Number(rawPage);
+    if (!Number.isFinite(parsed) || parsed < 1) return null;
+    return Math.floor(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function itemMatchesCategory(item: unknown, categorySlug: string): boolean {
+  if (!isRecord(item)) return false;
+
+  const category = isRecord(item.category) ? item.category : null;
+  const candidates = [
+    typeof item.category_name === 'string' ? item.category_name : '',
+    category && typeof category.slug === 'string' ? category.slug : '',
+    category && typeof category.name === 'string' ? category.name : '',
+    typeof item.genre === 'string' ? item.genre : '',
+  ]
+    .map((value) => slugifyCategory(value))
+    .filter(Boolean);
+
+  return candidates.includes(categorySlug);
+}
+
+function filterCatalogByCategory(payload: unknown, category: string): unknown {
+  const categorySlug = slugifyCategory(category);
+  if (!categorySlug) return payload;
+
+  if (Array.isArray(payload)) {
+    return payload.filter((item) => itemMatchesCategory(item, categorySlug));
+  }
+
+  if (isSearchPageEnvelope(payload)) {
+    const results = payload.results.filter((item) => itemMatchesCategory(item, categorySlug));
+    return {
+      ...payload,
+      count: results.length,
+      next: null,
+      previous: null,
+      results,
+    };
+  }
+
+  return payload;
+}
+
+async function fetchAllSearchCatalogPages(search: string): Promise<unknown> {
+  const results: unknown[] = [];
+  let page = 1;
+
+  for (let pageIndex = 0; pageIndex < MAX_SEARCH_PAGES; pageIndex += 1) {
+    const payload = await apiClient.get<unknown>(endpoints.books.search, {
+      query: { q: search, page },
+    });
+
+    if (!isSearchPageEnvelope(payload)) {
+      return payload;
+    }
+
+    results.push(...payload.results);
+
+    if (!payload.next) {
+      break;
+    }
+
+    const nextPage = parseNextPageNumber(payload.next);
+    if (nextPage !== null) {
+      if (nextPage <= page) break;
+      page = nextPage;
+      continue;
+    }
+
+    page += 1;
+  }
+
+  return {
+    count: results.length,
+    next: null,
+    previous: null,
+    results,
+  };
+}
 
 function normalizeBestSellingLimit(limit?: number): number | undefined {
   if (typeof limit !== 'number' || Number.isNaN(limit)) return undefined;
@@ -20,9 +139,18 @@ export const booksService = {
     return apiClient.get<PaginatedResponse<BookListItem>>(endpoints.books.list, { query });
   },
 
-  getCatalog(query: { category?: string } = {}) {
+  getCatalog(query: CatalogQuery = {}) {
+    const category = typeof query.category === 'string' ? query.category.trim() : '';
+    const search = typeof query.search === 'string' ? query.search.trim() : '';
+
+    if (search) {
+      return fetchAllSearchCatalogPages(search).then((payload) =>
+        category ? filterCatalogByCategory(payload, category) : payload,
+      );
+    }
+
     return apiClient.get<unknown>(endpoints.books.list, {
-      query: query.category ? { category: query.category } : undefined,
+      query: category ? { category } : undefined,
     });
   },
 
@@ -48,7 +176,7 @@ export const booksService = {
   },
 
   getAuthorOfWeek() {
-    return apiClient.get<unknown>(endpoints.books.authorOfWeek);
+    return apiClient.get<AuthorOfWeekResponse>(endpoints.books.authorOfWeek);
   },
 
   getAuthorBySlug(authorSlug: string) {

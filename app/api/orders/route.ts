@@ -44,10 +44,16 @@ function parseItem(raw: unknown, index: number, errors: Record<string, string[]>
   const rawBookId = pickFirst(rec, ['book_id', 'bookId', 'id']);
   const rawQuantity = pickFirst(rec, ['quantity', 'qty']);
   const rawUnitPrice = pickFirst(rec, ['unit_price', 'unitPrice', 'price']);
+  const rawVariant = pickFirst(rec, ['book_variant', 'bookVariant', 'variant']);
+  const rawQuality = pickFirst(rec, ['book_quality', 'bookQuality', 'quality']);
+  const rawEdition = pickFirst(rec, ['edition']);
 
   const bookId = Number(rawBookId);
   const quantity = Number(rawQuantity);
   const parsedUnitPrice = parseOptionalNumber(rawUnitPrice);
+  const variant = asTrimmedString(rawVariant).toLowerCase();
+  const quality = asTrimmedString(rawQuality);
+  const edition = asTrimmedString(rawEdition);
 
   if (!Number.isInteger(bookId) || bookId <= 0) {
     addError(errors, `items[${index}].book_id`, 'book_id must be a positive integer.');
@@ -63,6 +69,10 @@ function parseItem(raw: unknown, index: number, errors: Record<string, string[]>
     addError(errors, `items[${index}].unit_price`, 'unit_price cannot be negative.');
   }
 
+  if (variant && variant !== 'paperback' && variant !== 'hardcover') {
+    addError(errors, `items[${index}].book_variant`, 'book_variant must be paperback or hardcover.');
+  }
+
   if (!Number.isInteger(bookId) || bookId <= 0 || !Number.isInteger(quantity) || quantity <= 0) {
     return null;
   }
@@ -71,6 +81,9 @@ function parseItem(raw: unknown, index: number, errors: Record<string, string[]>
     book_id: bookId,
     quantity,
     ...(parsedUnitPrice.hasValue ? { unit_price: parsedUnitPrice.value } : {}),
+    ...(variant === 'paperback' || variant === 'hardcover' ? { book_variant: variant } : {}),
+    ...(quality ? { book_quality: quality } : {}),
+    ...(edition ? { edition } : {}),
   };
 }
 

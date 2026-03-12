@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 const categories = [
   {
     title: 'Books for Him',
@@ -32,10 +34,13 @@ export default function Categories() {
             href="#"
             className={`relative rounded-xl overflow-hidden ${cat.bg} flex flex-col justify-end min-h-[160px] group cursor-pointer hover:shadow-lg transition`}
           >
-            <img
+            <Image
               src={cat.imgUrl}
               alt={cat.title}
-              className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-40 transition"
+              fill
+              unoptimized
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="absolute inset-0 h-full w-full object-cover opacity-30 transition group-hover:opacity-40"
             />
             <div className="relative z-10 p-4">
               <h3 className={`font-bold text-base ${cat.textColor}`}>{cat.title}</h3>

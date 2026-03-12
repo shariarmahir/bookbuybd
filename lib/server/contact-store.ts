@@ -6,7 +6,10 @@ import type {
   ContactSubjectOption,
 } from '@/lib/api/contracts/contact';
 
-type StoredContactMessage = ContactMessagePayload & ContactMessageResponse & { updatedAt: string };
+type StoredContactMessage = ContactMessagePayload & ContactMessageResponse & {
+  updatedAt: string;
+  isRead: boolean;
+};
 
 const CONTACT_INFO: ContactInfoResponse = {
   phone: '+880 1712-345678',
@@ -20,7 +23,6 @@ const CONTACT_INFO: ContactInfoResponse = {
 const CONTACT_SUBJECTS: ContactSubjectOption[] = [
   { id: 'general', label: 'General Inquiry' },
   { id: 'order', label: 'Order Support' },
-  { id: 'printing', label: 'Printing Service' },
   { id: 'payment', label: 'Payment Issue' },
 ];
 
@@ -49,6 +51,7 @@ export function createContactMessage(payload: ContactMessagePayload): ContactMes
     status,
     submittedAt,
     updatedAt: submittedAt,
+    isRead: false,
   });
 
   return { messageId, status, submittedAt };
@@ -68,5 +71,20 @@ export function getContactMessageStatus(messageId: string): ContactMessageStatus
     messageId: record.messageId,
     status: record.status,
     updatedAt: record.updatedAt,
+    isRead: record.isRead,
   };
+}
+
+export function updateContactMessageReadState(messageId: string, isRead: boolean): StoredContactMessage | null {
+  const record = messageStore.get(messageId);
+  if (!record) return null;
+
+  const next: StoredContactMessage = {
+    ...record,
+    isRead,
+    updatedAt: new Date().toISOString(),
+  };
+
+  messageStore.set(messageId, next);
+  return next;
 }

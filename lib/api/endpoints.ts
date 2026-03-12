@@ -2,6 +2,8 @@ export const endpoints = {
   home: {
     summary: '/home',
     heroSlides: '/home/hero-slides',
+    dashboardHeroSlides: '/home/hero-slides/dashboard/',
+    dashboardHeroSlideDetail: (slideId: string | number) => `/home/hero-slides/dashboard/${encodeURIComponent(String(slideId))}/`,
     trendingSearches: '/search/trending',
     featuredCategories: '/categories',
     testimonials: '/testimonials',
@@ -9,6 +11,7 @@ export const endpoints = {
   },
   books: {
     list: '/books/',
+    search: '/books/search/',
     categories: '/books/categories/',
     dashboardList: '/books/dashboard/',
     dashboardCategories: '/books/dashboard/categories/',
@@ -18,14 +21,6 @@ export const endpoints = {
     bestSelling: '/books/best-selling/',
     detail: (bookSlug: string) => `/books/${bookSlug}/`,
     likes: (bookSlug: string) => `/books/${bookSlug}/likes/`,
-  },
-  printing: {
-    categories: '/printing/categories/',
-    categoryItems: (categoryId: string) => `/printing/categories/${categoryId}/items/`,
-    requests: '/printing/requests/',
-    requestDetail: (requestId: string) => `/printing/requests/${requestId}/`,
-    estimate: '/printing/requests/estimate/',
-    uploads: '/printing/uploads/presign/',
   },
   contact: {
     info: '/contact/info',
@@ -52,11 +47,22 @@ export const endpoints = {
   search: {
     suggestions: '/search/suggestions',
   },
+  business: {
+    deliverySettings: '/business/delivery-settings/',
+    dashboardDeliverySettings: '/business/delivery-settings/dashboard/',
+  },
   cart: {
     summary: '/cart/summary',
   },
   orders: {
     list: '/orders/',
     create: '/orders/',
+  },
+  printing: {
+    dashboardOrders: '/printing/dashboard/orders/',
+    dashboardOrderDetail: (orderId: string) => `/printing/dashboard/orders/${encodeURIComponent(orderId)}/`,
+    dashboardOrderStatus: (orderId: string) => `/printing/dashboard/orders/${encodeURIComponent(orderId)}/status/`,
+    dashboardPricing: '/printing/dashboard/pricing/',
+    dashboardItemPricing: (itemId: string) => `/printing/dashboard/items/${encodeURIComponent(itemId)}/pricing/`,
   },
 } as const;

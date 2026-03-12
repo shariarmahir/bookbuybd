@@ -251,7 +251,7 @@ export default function BooksGrid() {
               <h2 className="text-2xl font-extrabold text-gray-900 leading-tight">Bestsellers</h2>
               <p className="text-sm text-gray-500 mt-1">Our most popular books right now</p>
             </div>
-            <Link href="/shop" className="hidden sm:inline-flex text-sm font-bold text-brand-600 hover:text-brand-700 items-center gap-1">
+            <Link href="/books" className="hidden sm:inline-flex text-sm font-bold text-brand-600 hover:text-brand-700 items-center gap-1">
               View All
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -296,7 +296,7 @@ export default function BooksGrid() {
             </div>
           )}
 
-          <Link href="/shop" className="mt-4 inline-block text-xs text-brand-600 font-semibold hover:underline">
+          <Link href="/books" className="mt-4 inline-block text-xs text-brand-600 font-semibold hover:underline">
             VIEW MORE
           </Link>
         </div>
@@ -365,7 +365,7 @@ export default function BooksGrid() {
             </div>
           )}
 
-          <Link href="/shop" className="mt-4 inline-block text-xs text-brand-600 font-semibold hover:underline">
+          <Link href="/books" className="mt-4 inline-block text-xs text-brand-600 font-semibold hover:underline">
             VIEW MORE
           </Link>
         </div>

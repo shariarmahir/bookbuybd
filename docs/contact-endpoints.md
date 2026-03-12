@@ -24,7 +24,7 @@ Response example:
 [
   { "id": "general", "label": "General Inquiry" },
   { "id": "order", "label": "Order Support" },
-  { "id": "printing", "label": "Printing Service" }
+  { "id": "payment", "label": "Payment Issue" }
 ]
 ```
 
@@ -47,8 +47,8 @@ Request body:
 {
   "name": "Arif Billah",
   "email": "arif@example.com",
-  "subject": "Printing quote",
-  "message": "Need 200 copies of thesis print and bind.",
+  "subject": "Order support",
+  "message": "Please update me about my order status.",
   "preferredDate": "2026-03-20"
 }
 ```

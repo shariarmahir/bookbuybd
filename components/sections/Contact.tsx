@@ -1,154 +1,8 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ApiError, contactService, type ContactSubjectOption } from '@/lib/api';
 
-/* ══════════════════════════════════════════
-   MINI CALENDAR DROPDOWN
-══════════════════════════════════════════ */
-const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 const DEFAULT_SUBJECTS: ContactSubjectOption[] = [{ id: 'general', label: 'General Inquiry' }];
-
-function CalendarDropdown({
-  value, onChange,
-}: {
-  value: Date | null;
-  onChange: (d: Date) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [view, setView] = useState(new Date());
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fn = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', fn);
-    return () => document.removeEventListener('mousedown', fn);
-  }, []);
-
-  const year = view.getFullYear();
-  const month = view.getMonth();
-
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells = Array.from({ length: firstDay + daysInMonth }, (_, i) =>
-    i < firstDay ? null : i - firstDay + 1
-  );
-
-  const prevMonth = () => setView(new Date(year, month - 1, 1));
-  const nextMonth = () => setView(new Date(year, month + 1, 1));
-
-  const isSelected = (d: number) =>
-    value &&
-    value.getFullYear() === year &&
-    value.getMonth() === month &&
-    value.getDate() === d;
-
-  const isToday = (d: number) => {
-    const t = new Date();
-    return t.getFullYear() === year && t.getMonth() === month && t.getDate() === d;
-  };
-
-  const label = value
-    ? value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : 'Pick a date…';
-
-  return (
-    <div className="relative w-full" ref={ref}>
-      {/* Trigger */}
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className={`w-full flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm transition outline-none border ${open
-            ? 'border-blue-400 bg-white shadow-md'
-            : 'border-transparent bg-gray-100 hover:bg-gray-200'
-          } ${value ? 'text-gray-800 font-medium' : 'text-gray-400'}`}
-      >
-        <span className="flex items-center gap-2">
-          <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          {label}
-        </span>
-        <svg
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Dropdown panel */}
-      {open && (
-        <div
-          className="absolute z-50 top-full mt-2 left-0 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4"
-          style={{ width: 280 }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={prevMonth} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <span className="text-sm font-bold text-gray-800">
-              {MONTHS[month]} {year}
-            </span>
-            <button onClick={nextMonth} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Day labels */}
-          <div className="grid grid-cols-7 mb-1">
-            {DAYS.map(d => (
-              <div key={d} className="text-center text-[10px] font-bold text-gray-400 py-1">{d}</div>
-            ))}
-          </div>
-
-          {/* Day cells */}
-          <div className="grid grid-cols-7 gap-y-1">
-            {cells.map((day, i) => (
-              day === null ? (
-                <div key={i} />
-              ) : (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => { onChange(new Date(year, month, day)); setOpen(false); }}
-                  className={`aspect-square w-full flex items-center justify-center rounded-lg text-xs font-medium transition-all duration-150
-                    ${isSelected(day)
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-300 scale-105'
-                      : isToday(day)
-                        ? 'border border-blue-400 text-blue-600 hover:bg-blue-50'
-                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
-                    }`}
-                >
-                  {day}
-                </button>
-              )
-            ))}
-          </div>
-
-          {/* Today shortcut */}
-          <button
-            type="button"
-            onClick={() => { onChange(new Date()); setOpen(false); }}
-            className="mt-3 w-full text-xs text-blue-600 font-semibold hover:underline text-center"
-          >
-            Today
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ══════════════════════════════════════════
    ANIMATED SEND BUTTON
@@ -184,7 +38,7 @@ function SendButton({ onClick, sending }: { onClick: () => void; sending: boolea
         type="button"
         onClick={onClick}
         disabled={sending}
-        className="send-btn flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-7 py-3 rounded-xl transition-all"
+        className="send-btn flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 py-3 text-sm font-bold text-white transition-all hover:bg-blue-700 sm:w-auto"
         style={{ minWidth: 160 }}
       >
         {sending ? (
@@ -230,7 +84,6 @@ function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string
 ══════════════════════════════════════════ */
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: 'general', message: '' });
-  const [date, setDate] = useState<Date | null>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -282,7 +135,6 @@ export default function Contact() {
       .then(() => {
         setSent(true);
         setForm((prev) => ({ ...prev, name: '', email: '', message: '' }));
-        setDate(null);
         setTimeout(() => setSent(false), 3000);
       })
       .catch((error: unknown) => {
@@ -297,23 +149,20 @@ export default function Contact() {
     placeholder-gray-400 outline-none transition focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100`;
 
   return (
-    <section className="max-w-5xl mx-auto px-6 py-14">
+    <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
 
       {/* ── Section title ── */}
       <div className="text-center mb-10">
         <p className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">Contact Us</p>
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Get In Touch</h2>
+        <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">Get In Touch</h2>
         <div className="w-12 h-1 bg-blue-500 rounded-full mx-auto mt-3" />
       </div>
 
       {/* ── Two-panel card ── */}
-      <div className="flex gap-5 rounded-3xl overflow-visible">
+      <div className="flex flex-col gap-5 overflow-visible rounded-3xl lg:flex-row">
 
         {/* ════ LEFT PANEL ════ */}
-        <div
-          className="flex-shrink-0 flex flex-col gap-5 rounded-2xl p-6 bg-white border border-gray-100 shadow-sm"
-          style={{ width: 280 }}
-        >
+        <div className="flex flex-col gap-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 lg:w-[280px] lg:min-w-[280px] lg:flex-shrink-0">
           {/* Info rows */}
           <InfoCard
             icon={
@@ -362,10 +211,10 @@ export default function Contact() {
         </div>
 
         {/* ════ RIGHT PANEL — Form ════ */}
-        <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-7 flex flex-col gap-5">
+        <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-7">
 
           {/* Name + Email */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1.5">Name</label>
               <input
@@ -417,7 +266,7 @@ export default function Contact() {
           </div>
 
           {/* Send button + success */}
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex flex-wrap items-center gap-4">
             <SendButton onClick={handleSend} sending={sending} />
             {sent && (
               <span className="check-anim flex items-center gap-1.5 text-green-600 text-sm font-semibold">

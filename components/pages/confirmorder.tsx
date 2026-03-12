@@ -1,11 +1,30 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { CartItem, CheckoutForm, DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from './cartStore';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import {
+  CartItem,
+  CheckoutForm,
+  DEFAULT_DELIVERY_SETTINGS,
+  DeliverySettings,
+  calculateDeliveryCharge,
+  getCartItemKey,
+} from './cartStore';
 
 function Img({ src, alt = '', className = '', fallback = '#e2e8f0' }: { src: string; alt?: string; className?: string; fallback?: string }) {
   const [err, setErr] = useState(false);
   if (err) return <div className={className} style={{ background: fallback }} />;
-  return <img src={src} alt={alt} className={className} onError={() => setErr(true)} />;
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={600}
+      height={900}
+      unoptimized
+      loader={({ src: imageSrc }) => imageSrc}
+      className={className}
+      onError={() => setErr(true)}
+    />
+  );
 }
 
 /* ── Confetti particle ── */
@@ -27,6 +46,27 @@ interface ConfirmOrderProps {
   items: CartItem[];
   form: CheckoutForm;
   onContinueShopping: () => void;
+  deliverySettings?: DeliverySettings;
+}
+
+function buildOrderRef(form: CheckoutForm, items: CartItem[]): string {
+  const seed = [
+    form.fullName,
+    form.phone,
+    form.address,
+    form.city,
+    form.district,
+    ...items.map((item) => `${item.id}:${item.variant ?? 'standard'}:${item.qty}`),
+  ].join('|');
+
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+    hash |= 0;
+  }
+
+  const code = Math.abs(hash).toString(36).toUpperCase().padStart(7, '0').slice(0, 7);
+  return `BBD-${code}`;
 }
 
 const TRACK_STEPS = [
@@ -72,16 +112,21 @@ const TRACK_STEPS = [
   },
 ];
 
-export default function ConfirmOrder({ items, form, onContinueShopping }: ConfirmOrderProps) {
+export default function ConfirmOrder({
+  items,
+  form,
+  onContinueShopping,
+  deliverySettings = DEFAULT_DELIVERY_SETTINGS,
+}: ConfirmOrderProps) {
   const [checkDone, setCheckDone] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const [detailsVis, setDetailsVis] = useState(false);
   const [confettiOn, setConfettiOn] = useState(true);
   const [particles] = useState<Particle[]>(makeParticles(80));
-  const orderRef = useRef(`BBD-${Date.now().toString(36).toUpperCase().slice(-7)}`);
+  const orderRef = buildOrderRef(form, items);
 
   const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0);
-  const delivery = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
+  const delivery = calculateDeliveryCharge(subtotal, deliverySettings);
   const total = subtotal + delivery;
 
   useEffect(() => {
@@ -97,7 +142,7 @@ export default function ConfirmOrder({ items, form, onContinueShopping }: Confir
       `============================`,
       `   BookBuyBD – ORDER RECEIPT`,
       `============================`,
-      `Order ID   : ${orderRef.current}`,
+      `Order ID   : ${orderRef}`,
       `Date       : ${new Date().toLocaleDateString('en-GB')}`,
       ``,
       `DELIVER TO`,
@@ -110,7 +155,7 @@ export default function ConfirmOrder({ items, form, onContinueShopping }: Confir
       ``,
       `ITEMS`,
       `-----`,
-      ...items.map(it => `${it.title} (×${it.qty})  ৳${(it.price * it.qty).toLocaleString()}`),
+      ...items.map(it => `${it.title} [${it.edition}] (×${it.qty})  ৳${(it.price * it.qty).toLocaleString()}`),
       ``,
       `Subtotal   : ৳${subtotal.toLocaleString()}`,
       `Delivery   : ${delivery === 0 ? 'FREE' : '৳' + delivery}`,
@@ -122,7 +167,7 @@ export default function ConfirmOrder({ items, form, onContinueShopping }: Confir
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `receipt-${orderRef.current}.txt`;
+    a.download = `receipt-${orderRef}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -237,7 +282,7 @@ export default function ConfirmOrder({ items, form, onContinueShopping }: Confir
                 {/* Order ID badge */}
                 <div className="inline-flex items-center gap-3 mt-6 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
                   <span className="text-[10px] font-black text-blue-300 uppercase tracking-widest">Order ID</span>
-                  <span className="text-white font-black text-base tracking-tight">{orderRef.current}</span>
+                  <span className="text-white font-black text-base tracking-tight">{orderRef}</span>
                   <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
 
@@ -304,7 +349,7 @@ export default function ConfirmOrder({ items, form, onContinueShopping }: Confir
 
                   <div className="space-y-4">
                     {items.map(item => (
-                      <div key={item.id} className="flex gap-4 items-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-100 transition-all">
+                      <div key={getCartItemKey(item)} className="flex gap-4 items-center p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-100 transition-all">
                         <div className="flex-shrink-0 rounded-xl overflow-hidden shadow-md" style={{ width: 52, height: 72 }}>
                           <Img src={item.cover} alt={item.title} className="w-full h-full object-cover" fallback={item.coverFallback} />
                         </div>
@@ -389,14 +434,14 @@ export default function ConfirmOrder({ items, form, onContinueShopping }: Confir
                         </div>
                         <h3 className="text-base font-black text-amber-900">Your Note</h3>
                       </div>
-                      <p className="text-sm text-amber-800 font-medium italic leading-relaxed">"{form.note}"</p>
+                      <p className="text-sm text-amber-800 font-medium italic leading-relaxed">&ldquo;{form.note}&rdquo;</p>
                     </div>
                   )}
 
                   {/* Support note */}
                   <p className="text-[11px] text-gray-400 font-semibold text-center leading-relaxed px-4">
                     Need help? Contact us at <span className="text-blue-500 font-black">support@bookbuybd.com</span>
-                    <br />Order ID: <span className="font-black text-gray-600">{orderRef.current}</span>
+                    <br />Order ID: <span className="font-black text-gray-600">{orderRef}</span>
                   </p>
                 </div>
               </div>

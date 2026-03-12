@@ -4,8 +4,13 @@ const backendOriginRaw = process.env.BACKEND_ORIGIN?.trim() || "http://127.0.0.1
 const backendOrigin = backendOriginRaw.endsWith("/")
   ? backendOriginRaw.slice(0, -1)
   : backendOriginRaw;
+const appRoot = process.cwd();
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: appRoot,
+  },
+  outputFileTracingRoot: appRoot,
   async rewrites() {
     return [
       {
